@@ -290,3 +290,73 @@ public class SecurityConfig {
         }
     }
 }
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.authentication.OAuth2LoginAuthenticationFilter;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+
+import java.util.Arrays;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public ClientRegistrationRepository clientRegistrationRepository() {
+        ClientRegistration clientRegistration = ClientRegistration.withRegistrationId("gitlab")
+                .clientId("your-gitlab-client-id")
+                .clientSecret("your-gitlab-client-secret")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUriTemplate("{baseUrl}/login/oauth2/code/{registrationId}")
+                .scope("read_user")
+                .authorizationUri("https://gitlab.com/oauth/authorize")
+                .tokenUri("https://gitlab.com/oauth/token")
+                .userInfoUri("https://gitlab.com/api/v4/user")
+                .clientName("GitLab")
+                .build();
+        return new InMemoryClientRegistrationRepository(Arrays.asList(clientRegistration));
+    }
+
+    @Bean
+    public OAuth2AuthorizedClientRepository authorizedClientRepository() {
+        return new AuthenticatedPrincipalOAuth2AuthorizedClientRepository();
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler();
+        successHandler.setUseReferer(true);
+        return successHandler;
+    }
+
+    @Configuration
+    public static class HttpSecurityConfig extends SecurityFilterChainConfigurerAdapter {
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+                .authorizeRequests(authorizeRequests ->
+                    authorizeRequests
+                        .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2Login ->
+                    oauth2Login
+                        .defaultSuccessUrl("/")
+                        .loginPage("/login")
+                        .successHandler(authenticationSuccessHandler())
+                );
+        }
+    }
+}
