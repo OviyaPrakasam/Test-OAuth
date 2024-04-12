@@ -1,0 +1,110 @@
+spring.security.oauth2.client.registration.gitlab.client-id=your-gitlab-client-id
+spring.security.oauth2.client.registration.gitlab.client-secret=your-gitlab-client-secret
+spring.security.oauth2.client.registration.gitlab.client-name=GitLab
+spring.security.oauth2.client.registration.gitlab.scope=read_user
+spring.security.oauth2.client.registration.gitlab.client-authentication-method=basic
+spring.security.oauth2.client.provider.gitlab.authorization-uri=https://gitlab.com/oauth/authorize
+spring.security.oauth2.client.provider.gitlab.token-uri=https://gitlab.com/oauth/token
+spring.security.oauth2.client.provider.gitlab.user-info-uri=https://gitlab.com/api/v4/user
+
+
+https://prodgitlab.org.com/user/xxxxxx/activity?limit=15
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class OAuth2Controller {
+
+    @GetMapping("/login/oauth2/code/gitlab")
+    public String login() {
+        return "redirect:/";
+    }
+}
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Service
+public class GitLabService {
+
+    @Autowired
+    private OAuth2AuthorizedClientService authorizedClientService;
+
+    public String getUserInfo() {
+        OAuth2AuthorizedClient authorizedClient =
+                authorizedClientService.loadAuthorizedClient("gitlab");
+        String accessToken = authorizedClient.getAccessToken().getTokenValue();
+
+        WebClient webClient = WebClient.builder()
+                .baseUrl("https://gitlab.com/api/v4/user")
+                .defaultHeader("Authorization", "Bearer " + accessToken)
+                .build();
+
+        return webClient.get()
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+}
+
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@EnableWebSecurity
+@EnableOAuth2Client
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+                .anyRequest().authenticated()
+                .and()
+            .oauth2Login()
+                .defaultSuccessUrl("/")
+                .permitAll();
+    }
+}
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class HomeController {
+
+    @Autowired
+    private GitLabService gitLabService;
+
+    @GetMapping("/")
+    public String home(Model model) {
+        String userInfo = gitLabService.getUserInfo();
+        model.addAttribute("userInfo", userInfo);
+        return "home";
+    }
+}
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>GitLab OAuth2 Example</title>
+</head>
+<body>
+    <h1>User Information</h1>
+    <p th:text="${userInfo}"></p>
+</body>
+</html>
+
+
