@@ -196,3 +196,97 @@ public class HomeController {
   </build>
 
 </project>
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+
+import java.util.Arrays;
+
+@Configuration
+@EnableWebSecurity
+@EnableOAuth2Client
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public ClientRegistrationRepository clientRegistrationRepository() {
+        ClientRegistration clientRegistration = ClientRegistration.withRegistrationId("gitlab")
+                .clientId("your-gitlab-client-id")
+                .clientSecret("your-gitlab-client-secret")
+                .authorizationGrantType(org.springframework.security.oauth2.core.AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUriTemplate("{baseUrl}/login/oauth2/code/{registrationId}")
+                .scope("read_user")
+                .authorizationUri("https://gitlab.com/oauth/authorize")
+                .tokenUri("https://gitlab.com/oauth/token")
+                .userInfoUri("https://gitlab.com/api/v4/user")
+                .clientName("GitLab")
+                .build();
+        return new InMemoryClientRegistrationRepository(Arrays.asList(clientRegistration));
+    }
+
+    @Bean
+    public OAuth2AuthorizedClientRepository authorizedClientRepository() {
+        return new AuthenticatedPrincipalOAuth2AuthorizedClientRepository();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new UserDetailsService() {
+            @Override
+            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                return User.withUsername(username)
+                        .password(passwordEncoder().encode("password")) // Replace with actual password
+                        .roles("USER")
+                        .build();
+            }
+        };
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler();
+        successHandler.setUseReferer(true);
+        return successHandler;
+    }
+
+    @Configuration
+    public static class OAuth2LoginSecurityConfig extends org.springframework.security.config.annotation.web.configuration.OAuth2LoginSecurityConfig {
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+                .authorizeRequests(authorizeRequests ->
+                    authorizeRequests
+                        .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2Login ->
+                    oauth2Login
+                        .defaultSuccessUrl("/")
+                        .loginPage("/login")
+                        .successHandler(authenticationSuccessHandler())
+                );
+        }
+    }
+}
