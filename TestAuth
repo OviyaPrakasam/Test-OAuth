@@ -442,3 +442,25 @@ public class SecurityConfig {
         }
     }
 }
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>GitLab Activity</title>
+</head>
+<body>
+    <h1>GitLab Activity</h1>
+    
+    <h2>Request URL</h2>
+    <p th:text="${requestUrl}"></p>
+
+    <h2>Headers</h2>
+    <ul>
+        <li th:each="header : ${headers}" th:text="${header.key + ': ' + header.value}"></li>
+    </ul>
+
+    <h2>Response Body Preview</h2>
+    <p th:text="${responseBodyPreview}"></p>
+</body>
+</html>
