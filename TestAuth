@@ -1,3 +1,49 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class FetchJSON {
+    public static void main(String[] args) {
+        try {
+            // URL to fetch
+            String url = "https://example.com/users/pl5x856/activity?limit=15";
+
+            // Create URL object
+            URL obj = new URL(url);
+
+            // Open connection
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // Set request method
+            con.setRequestMethod("GET");
+
+            // Set request headers if needed
+            // con.setRequestProperty("User-Agent", "Mozilla/5.0");
+
+            // Get the response code
+            int responseCode = con.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
+
+            // Read the response
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Print the response
+            System.out.println("Response:\n" + response.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
 spring.security.oauth2.client.registration.gitlab.client-id=your-gitlab-client-id
 spring.security.oauth2.client.registration.gitlab.client-secret=your-gitlab-client-secret
 spring.security.oauth2.client.registration.gitlab.client-name=GitLab
