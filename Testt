@@ -1,3 +1,66 @@
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import java.util.List;
+import java.util.Map;
+
+@Controller
+public class YourController {
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @GetMapping("/")
+    public String index(@AuthenticationPrincipal OAuth2User principal, Model model) {
+        System.out.println("User details fetched from Gitlab: " + principal);
+
+        if (principal != null) {
+            model.addAttribute("name", principal.getAttribute("name"));
+            model.addAttribute("isAuthenticated", true);
+
+            String url = "https://prodgitlab.usaa.com/users/PL5X856/activity?limit=15";
+
+            try {
+                // Make the request
+                ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
+
+                System.out.println("Details of a response Entity: " + responseEntity);
+
+                // Extract Info
+                String requestUrl = responseEntity.getStatusCode().toString();
+                Map<String, List<String>> headers = responseEntity.getHeaders();
+                String responseBodyPreview = responseEntity.getHeaders().toString();
+                String responseBody = responseEntity.getBody();
+
+                model.addAttribute("requestUrl", requestUrl);
+                model.addAttribute("headers", headers);
+                model.addAttribute("responseBodyPreview", responseBodyPreview);
+                model.addAttribute("responseBody", responseBody);
+
+            } catch (HttpClientErrorException.Redirect redirectException) {
+                // Handle redirection
+                String redirectedUrl = redirectException.getResponseHeaders().getLocation().toString();
+                System.out.println("Redirected URL: " + redirectedUrl);
+                model.addAttribute("redirectedUrl", redirectedUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            System.out.println("Not Authenticated");
+            model.addAttribute("isAuthenticated", false);
+        }
+
+        return "index";
+    }
+}
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
