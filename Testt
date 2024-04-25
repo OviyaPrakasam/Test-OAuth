@@ -1,0 +1,53 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
+
+public class XhrDetails {
+    public static void main(String[] args) {
+        try {
+            // URL to fetch
+            String url = "https://prodgitlab.usaa.com/PL5X856";
+
+            // Create URL object
+            URL obj = new URL(url);
+
+            // Open connection
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // Set request method
+            con.setRequestMethod("GET");
+
+            // Set XHR headers if needed
+            con.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+            
+            // Get all headers
+            Map<String, java.util.List<String>> headerFields = con.getHeaderFields();
+            
+            // Print response headers
+            for (Map.Entry<String, java.util.List<String>> entry : headerFields.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue());
+            }
+
+            // Get the response code
+            int responseCode = con.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
+
+            // Read the response
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Print the response
+            System.out.println("Response:\n" + response.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
