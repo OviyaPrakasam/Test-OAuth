@@ -3,6 +3,71 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
+import java.util.Map;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            // Construct the URL with limit and offset parameters
+            String urlString = "your_url_here?limit=10&offset=0";
+            URL url = new URL(urlString);
+
+            // Open connection
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            // Set request method
+            conn.setRequestMethod("GET");
+
+            // Set basic authentication header
+            String username = "your_username";
+            String password = "your_password";
+            String auth = username + ":" + password;
+            byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes());
+            String authHeaderValue = "Basic " + new String(encodedAuth);
+            conn.setRequestProperty("Authorization", authHeaderValue);
+
+            // Get the response code
+            int responseCode = conn.getResponseCode();
+
+            // Print response code
+            System.out.println("Response Code: " + responseCode);
+
+            // Print response headers
+            Map<String, String> headers = conn.getHeaderFields();
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                System.out.println(entry.getKey() + ": " + entry.getValue());
+            }
+
+            // Check if the request was successful (response code 200)
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Create a BufferedReader to read the response
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                // Read the response line by line
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                // Print the JSON response
+                System.out.println("Response Body:");
+                System.out.println(response.toString());
+            } else {
+                System.out.println("HTTP request failed with response code: " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Base64;
 
 public class Main {
     public static void main(String[] args) {
