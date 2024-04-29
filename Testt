@@ -1,3 +1,47 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            // Create URL object
+            URL url = new URL("your_url_here");
+
+            // Open connection
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            // Set request method
+            conn.setRequestMethod("GET");
+
+            // Get the response code
+            int responseCode = conn.getResponseCode();
+
+            // Check if the request was successful (response code 200)
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Create a BufferedReader to read the response
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                // Read the response line by line
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                // Print the JSON response
+                System.out.println(response.toString());
+            } else {
+                System.out.println("HTTP request failed with response code: " + responseCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
