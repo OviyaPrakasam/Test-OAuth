@@ -349,3 +349,39 @@ public class XhrDetails {
         }
     }
 }
+
+
+import java.net.URL;
+
+public class HttpRequestTypeFinder {
+
+    public static void main(String[] args) {
+        String urlString = "https://example.com/users/PL5X856/activity?limit=15";
+
+        try {
+            // Parse the URL
+            URL url = new URL(urlString);
+
+            // Extract the path and query parameters
+            String path = url.getPath();
+            String query = url.getQuery();
+
+            // Determine the HTTP request type based on the path and query parameters
+            String requestType = getRequestType(path, query);
+            System.out.println("HTTP Request Type: " + requestType);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String getRequestType(String path, String query) {
+        // If the path contains "users" and a user identifier (e.g., PL5X856) and the query contains "limit"
+        if (path.contains("users") && path.matches(".*/[a-zA-Z0-9]+/activity") && query != null && query.contains("limit")) {
+            return "GET";
+        }
+        // Add more conditions to handle other types of requests (e.g., POST, PUT, DELETE) if necessary
+
+        // Default to unknown request type
+        return "UNKNOWN";
+    }
+}
