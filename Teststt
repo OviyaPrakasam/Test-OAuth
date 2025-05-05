@@ -1,62 +1,46 @@
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import javax.servlet.http.*;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.*;
-import org.springframework.web.servlet.ModelAndView;
-
-public class LandingPageControllerTest {
-
-    @Mock
-    private HttpServletRequest request;
-
-    @Mock
-    private HttpServletResponse response;
-
-    @Mock
-    private HttpSession session;
-
-    @Mock
-    private CustomerBO customerBO;
-
-    private LandingPageController controller;
-    private LandingPageController spyController;
-
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
-        controller = new LandingPageController();
-        controller.customerBO = customerBO; // inject the mock
-
-        // Now create a spy of the real controller
-        spyController = spy(controller);
+  private Boolean cardActivationFlagProcessing(List cardList, List <BannerDisplayCounterVO> bannerList, String userId){
+    	boolean bannerFlag = false;
+    	
+    	//Actual Banner Logic
+    	try{
+    		if(null != cardList && cardList.size() > 0){
+		 		for (Object aCardList : cardList) {
+		            CardVO cardVO = (CardVO) aCardList;
+		            if(null != cardVO && null != cardVO.getCardStatus() 
+		            		&&cardVO.getCardStatus().equalsIgnoreCase(CommonConstant.CCPL_NOT_ACTIVE_FLAG)
+		            		&& null != cardVO.getEmbossingDateFlag() && cardVO.getEmbossingDateFlag()){
+		            	if(null != bannerList && bannerList.size() > 0){
+		                	for(BannerDisplayCounterVO bannerVo : bannerList){
+		                		if(cardVO.getAccountNumber().equals(bannerVo.getCardNumber()) && 
+		               				 	bannerVo.getCounter() < SysParamConstant.CREDIT_CARD_ACTIVATION_MAX_DISPLAY_COUNTER){
+		                				bannerVo.setUpdate(true);
+		                				bannerFlag = customerBO.validateBannerDisplayCounter(bannerVo, userId, CustomerConstant.CREDIT_CARD_ACTIVATION_COUNTER_CODE);
+		                				return bannerFlag;
+				               		 } else {
+				               			bannerVo = new BannerDisplayCounterVO();
+			                    		bannerVo.setCardNumber(cardVO.getAccountNumber());
+			                    		bannerVo.setCounter(CommonConstant.BANNER_COUNTER_ZERO);
+			                    		bannerVo.setUpdate(false);
+			                        	bannerFlag = customerBO.validateBannerDisplayCounter(bannerVo, userId, CustomerConstant.CREDIT_CARD_ACTIVATION_COUNTER_CODE);
+			                        	return bannerFlag;
+		                 		 }
+		                	}
+		            	}else {
+		                	BannerDisplayCounterVO bannerVo = new BannerDisplayCounterVO();
+		            		bannerVo = new BannerDisplayCounterVO();
+		             		bannerVo.setCardNumber(cardVO.getAccountNumber());
+		             		bannerVo.setCounter(CommonConstant.BANNER_COUNTER_ONE);
+		             		bannerVo.setUpdate(false);
+		                 	bannerFlag = customerBO.validateBannerDisplayCounter(bannerVo, userId, CustomerConstant.CREDIT_CARD_ACTIVATION_COUNTER_CODE);
+		                 	return bannerFlag;
+		        	}
+		           }
+		 		}
+    		}
+    	}catch(Exception e){
+    		logger.debug("To display the card activation banner the response from kong/ccms is failed."+e.getMessage());
+    	}
+    	
+		return bannerFlag;
+    	
     }
-
-    @Test
-    public void testDoTnCUpdate() throws Exception {
-        // Arrange
-        String termVersion = "1.0";
-        CustomerVo customerVO = new CustomerVo();
-        CustomerInfo customerInfo = new CustomerInfo();
-
-        when(request.getSession()).thenReturn(session);
-        when(session.getAttribute("termVersion")).thenReturn(termVersion);
-
-        // Spy method stubs
-        doReturn(customerVO).when(spyController).getCustomerVO();
-        doReturn(customerInfo).when(spyController).getCustomerInfo();
-        doReturn(new ModelAndView("landingPage")).when(spyController).doViewLanding(any(), any());
-
-        // Act
-        ModelAndView mav = spyController.doTnCUpdate(request, response);
-
-        // Assert
-        assertEquals("landingPage", mav.getViewName());
-        assertEquals("1.0", customerVO.getTcVersionNo());
-        assertEquals("Y", customerVO.getIsTCAccepted());
-        assertNotNull(customerVO.getTcAcceptedTime());
-    }
-}
