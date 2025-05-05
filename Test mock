@@ -1,0 +1,59 @@
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import javax.servlet.http.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
+import org.springframework.web.servlet.ModelAndView;
+
+public class LandingPageControllerTest {
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @Mock
+    private HttpSession session;
+
+    @Mock
+    private CustomerBO customerBO;
+
+    @InjectMocks
+    private LandingPageController controller;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this); // Initialize mocks
+    }
+
+    @Test
+    public void testDoTnCUpdate() throws Exception {
+        // Arrange
+        String termVersion = "1.0";  // Mocked term version from session
+        CustomerVo customerVO = new CustomerVo();
+
+        // Mock the behavior of request and session
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("termVersion")).thenReturn(termVersion);
+
+        // Mock the behavior of getCustomerVO() method to return customerVO
+        doReturn(customerVO).when(controller).getCustomerVO();
+        
+        // Mock the behavior of doViewLanding() method to return a dummy view
+        doReturn(new ModelAndView("landingPage")).when(controller).doViewLanding(any(), any());
+
+        // Act
+        ModelAndView mav = controller.doTnCUpdate(request, response);
+
+        // Assert
+        assertNotNull(mav);  // Ensure ModelAndView is returned
+        assertEquals("landingPage", mav.getViewName());  // Ensure correct view is returned
+        assertEquals("1.0", customerVO.getTcVersionNo());  // Ensure TcVersionNo is set correctly
+        assertEquals("Y", customerVO.getIsTCAccepted());   // Ensure TCAccepted is set to 'Y'
+        assertNotNull(customerVO.getTcAcceptedTime());     // Ensure TcAcceptedTime is not null
+    }
+}
