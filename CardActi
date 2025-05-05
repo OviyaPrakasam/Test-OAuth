@@ -96,3 +96,23 @@ public class YourClassTest {
         assertFalse(result); // Should catch and return default false
     }
 }
+@Test
+public void testExceptionHandling() throws Exception {
+    CardVO card = new CardVO();
+    card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
+    card.setEmbossingDateFlag(true);
+    card.setAccountNumber("exceptionCard");
+
+    when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any()))
+            .thenThrow(new RuntimeException("Simulated exception"));
+
+    List<CardVO> cardList = List.of(card);
+    List<BannerDisplayCounterVO> bannerList = null;
+
+    Method method = YourClass.class.getDeclaredMethod("cardActivationFlagProcessing", List.class, List.class, String.class);
+    method.setAccessible(true);
+
+    Boolean result = (Boolean) method.invoke(yourClass, cardList, bannerList, "user123");
+
+    assertFalse(result);
+}
