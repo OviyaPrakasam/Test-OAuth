@@ -1,0 +1,98 @@
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class YourClassTest {
+
+    private YourClass yourClass; // Replace with the actual class name
+    private CustomerBO customerBO;
+
+    @BeforeEach
+    public void setUp() {
+        customerBO = mock(CustomerBO.class);
+        yourClass = new YourClass();
+        yourClass.setCustomerBO(customerBO); // Provide setter or constructor injection
+    }
+
+    @Test
+    public void testCardListIsNull() {
+        boolean result = yourClass.cardActivationFlagProcessing(null, null, "user123");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testCardListEmpty() {
+        boolean result = yourClass.cardActivationFlagProcessing(Collections.emptyList(), null, "user123");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testValidCardAndBannerUpdateTrue() {
+        CardVO card = new CardVO();
+        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
+        card.setEmbossingDateFlag(true);
+        card.setAccountNumber("12345");
+
+        BannerDisplayCounterVO banner = new BannerDisplayCounterVO();
+        banner.setCardNumber("12345");
+        banner.setCounter(0);
+
+        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any())).thenReturn(true);
+
+        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), List.of(banner), "user123");
+
+        assertTrue(result);
+        assertTrue(banner.isUpdate());
+    }
+
+    @Test
+    public void testValidCardBannerListButNoMatch() {
+        CardVO card = new CardVO();
+        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
+        card.setEmbossingDateFlag(true);
+        card.setAccountNumber("67890");
+
+        BannerDisplayCounterVO banner = new BannerDisplayCounterVO();
+        banner.setCardNumber("12345"); // No match
+        banner.setCounter(0);
+
+        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any())).thenReturn(false);
+
+        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), List.of(banner), "user123");
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testValidCardNoBannerList() {
+        CardVO card = new CardVO();
+        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
+        card.setEmbossingDateFlag(true);
+        card.setAccountNumber("99999");
+
+        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any())).thenReturn(true);
+
+        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), null, "user123");
+
+        assertTrue(result);
+    }
+
+    @Test
+    public void testExceptionHandling() {
+        CardVO card = new CardVO();
+        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
+        card.setEmbossingDateFlag(true);
+        card.setAccountNumber("exceptionCard");
+
+        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any()))
+                .thenThrow(new RuntimeException("Simulated exception"));
+
+        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), null, "user123");
+        assertFalse(result); // Should catch and return default false
+    }
+}
