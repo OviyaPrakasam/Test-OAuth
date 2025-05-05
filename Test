@@ -215,3 +215,48 @@ void testGetCCActivationFlag_withValidData_shouldReturnTrue() throws Exception {
 		boolean result = (boolean) method.invoke(landingPageControllerSpy, customerVO, false);
 		assertTrue("Expected banner flag to be true with valid data", result);
 	}
+
+
+@Test
+public void testGetCCActivationFlag_withValidData_shouldReturnTrue() throws Exception {
+    // Prepare mocks
+    CardBO cardBO = mock(CardBO.class);
+    CustomerBO customerBO = mock(CustomerBO.class);
+
+    // Prepare test data
+    CardVO cardVO = new CardVO();
+    cardVO.setAccountNumber("1234567890");
+    List<CardVO> cardList = Collections.singletonList(cardVO);
+    CardSummaryVO cardSummaryVO = new CardSummaryVO();
+    cardSummaryVO.setCardList(cardList);
+
+    BannerDisplayCounterVO bannerVO = new BannerDisplayCounterVO();
+    bannerVO.setCardNumber("1234567890");
+    bannerVO.setCounter(0);
+    List<BannerDisplayCounterVO> bannerList = Collections.singletonList(bannerVO);
+
+    when(cardBO.getCardSummary(anyList())).thenReturn(cardSummaryVO);
+    when(customerBO.getBannerCounterList(any(), any())).thenReturn(bannerList);
+
+    // Spy and inject dependencies
+    LandingPageController landingPageControllerSpy = PowerMockito.spy(new LandingPageController());
+    Field cardBOField = LandingPageController.class.getDeclaredField("cardBO");
+    cardBOField.setAccessible(true);
+    cardBOField.set(landingPageControllerSpy, cardBO);
+
+    Field customerBOField = LandingPageController.class.getDeclaredField("customerBO");
+    customerBOField.setAccessible(true);
+    customerBOField.set(landingPageControllerSpy, customerBO);
+
+    // Mock private method call
+    PowerMockito.doReturn(true).when(landingPageControllerSpy, "cardActivationFlagProcessing", any(), any(), anyString());
+
+    // Invoke method and assert result
+    Method method = LandingPageController.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
+    method.setAccessible(true);
+    CustomerVO customerVO = new CustomerVO();
+    customerVO.setUserId("user123");
+
+    boolean result = (boolean) method.invoke(landingPageControllerSpy, customerVO, false);
+    assertTrue("Expected banner flag to be true with valid data", result);
+}
