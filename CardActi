@@ -1,118 +1,43 @@
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-public class YourClassTest {
-
-    private YourClass yourClass; // Replace with the actual class name
-    private CustomerBO customerBO;
-
-    @BeforeEach
-    public void setUp() {
-        customerBO = mock(CustomerBO.class);
-        yourClass = new YourClass();
-        yourClass.setCustomerBO(customerBO); // Provide setter or constructor injection
-    }
-
-    @Test
-    public void testCardListIsNull() {
-        boolean result = yourClass.cardActivationFlagProcessing(null, null, "user123");
-        assertFalse(result);
-    }
-
-    @Test
-    public void testCardListEmpty() {
-        boolean result = yourClass.cardActivationFlagProcessing(Collections.emptyList(), null, "user123");
-        assertFalse(result);
-    }
-
-    @Test
-    public void testValidCardAndBannerUpdateTrue() {
-        CardVO card = new CardVO();
-        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
-        card.setEmbossingDateFlag(true);
-        card.setAccountNumber("12345");
-
-        BannerDisplayCounterVO banner = new BannerDisplayCounterVO();
-        banner.setCardNumber("12345");
-        banner.setCounter(0);
-
-        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any())).thenReturn(true);
-
-        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), List.of(banner), "user123");
-
-        assertTrue(result);
-        assertTrue(banner.isUpdate());
-    }
-
-    @Test
-    public void testValidCardBannerListButNoMatch() {
-        CardVO card = new CardVO();
-        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
-        card.setEmbossingDateFlag(true);
-        card.setAccountNumber("67890");
-
-        BannerDisplayCounterVO banner = new BannerDisplayCounterVO();
-        banner.setCardNumber("12345"); // No match
-        banner.setCounter(0);
-
-        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any())).thenReturn(false);
-
-        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), List.of(banner), "user123");
-
-        assertFalse(result);
-    }
-
-    @Test
-    public void testValidCardNoBannerList() {
-        CardVO card = new CardVO();
-        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
-        card.setEmbossingDateFlag(true);
-        card.setAccountNumber("99999");
-
-        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any())).thenReturn(true);
-
-        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), null, "user123");
-
-        assertTrue(result);
-    }
-
-    @Test
-    public void testExceptionHandling() {
-        CardVO card = new CardVO();
-        card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
-        card.setEmbossingDateFlag(true);
-        card.setAccountNumber("exceptionCard");
-
-        when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any()))
-                .thenThrow(new RuntimeException("Simulated exception"));
-
-        boolean result = yourClass.cardActivationFlagProcessing(List.of(card), null, "user123");
-        assertFalse(result); // Should catch and return default false
-    }
-}
-@Test
-public void testExceptionHandling() throws Exception {
-    CardVO card = new CardVO();
-    card.setCardStatus(CommonConstant.CCPL_NOT_ACTIVE_FLAG);
-    card.setEmbossingDateFlag(true);
-    card.setAccountNumber("exceptionCard");
-
-    when(customerBO.validateBannerDisplayCounter(any(), eq("user123"), any()))
-            .thenThrow(new RuntimeException("Simulated exception"));
-
-    List<CardVO> cardList = List.of(card);
-    List<BannerDisplayCounterVO> bannerList = null;
-
-    Method method = YourClass.class.getDeclaredMethod("cardActivationFlagProcessing", List.class, List.class, String.class);
-    method.setAccessible(true);
-
-    Boolean result = (Boolean) method.invoke(yourClass, cardList, bannerList, "user123");
-
-    assertFalse(result);
-}
+ 
+ 
+ 
+ private Boolean getCCActivationFlag(CustomerVO customerVO, boolean isCCActivationBannerDisplay){
+    	CardSummaryVO cardSummaryVO = new CardSummaryVO();
+    	List <BannerDisplayCounterVO> bannerList = null;
+    	boolean bannerFlag = false;
+    	try{
+    	if(!isCCActivationBannerDisplay){
+	    	cardSummaryVO = cardBO.getCardSummary(customerVO);
+	    	List cardList = cardSummaryVO.getCardList();
+	    	bannerList = new ArrayList<BannerDisplayCounterVO>();
+        	bannerList = customerBO.getBannerCounterList(customerVO.getUserId(), CustomerConstant.CREDIT_CARD_ACTIVATION_COUNTER_CODE);
+	    	if(null != cardSummaryVO && CollectionUtils.isNotEmpty(cardList)){
+	                 		if(null != bannerList){
+	                 			int len = bannerList.size() - 1;
+		                    	for(int i = len; i >= 0; i--){
+		                    		BannerDisplayCounterVO bannerVo = (BannerDisplayCounterVO)bannerList.get(i); 
+			                    	if(null != bannerVo && null != bannerVo.getCardNumber() && null != bannerVo.getCounter()){
+			                    		if(bannerVo.getCounter() >= SysParamConstant.CREDIT_CARD_ACTIVATION_MAX_DISPLAY_COUNTER){
+			                    			int l = cardList.size() - 1;
+			                    			for (int j = l; j >= 0; j--) {
+			                		            CardVO cardVO = (CardVO) cardList.get(j);
+			                		            if(null != cardVO && cardVO.getAccountNumber().equals(bannerVo.getCardNumber())){
+			                		            	cardList.remove(j);
+			                		            	bannerList.remove(i);
+			                		            }
+			                    			 }
+			                    		}
+			                    	}
+			                    }
+			                } 
+		                    	bannerFlag = cardActivationFlagProcessing(cardList, bannerList, customerVO.getUserId());
+		                    } else {
+		                    	bannerFlag = cardActivationFlagProcessing(cardList,bannerList,customerVO.getUserId());
+		                    }
+	    	}
+    	}catch(Exception e){
+    		logger.debug("To display the card activation banner the response from kong/ccms is failed."+e.getMessage());
+    	}
+    	return bannerFlag;
+    	}
+	  
