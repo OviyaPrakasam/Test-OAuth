@@ -1,0 +1,62 @@
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import javax.servlet.http.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
+import org.springframework.web.servlet.ModelAndView;
+
+public class LandingPageControllerTest {
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @Mock
+    private HttpSession session;
+
+    @Mock
+    private CustomerBO customerBO;
+
+    private LandingPageController controller;
+    private LandingPageController spyController;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+        controller = new LandingPageController();
+        controller.customerBO = customerBO; // inject the mock
+
+        // Now create a spy of the real controller
+        spyController = spy(controller);
+    }
+
+    @Test
+    public void testDoTnCUpdate() throws Exception {
+        // Arrange
+        String termVersion = "1.0";
+        CustomerVo customerVO = new CustomerVo();
+        CustomerInfo customerInfo = new CustomerInfo();
+
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("termVersion")).thenReturn(termVersion);
+
+        // Spy method stubs
+        doReturn(customerVO).when(spyController).getCustomerVO();
+        doReturn(customerInfo).when(spyController).getCustomerInfo();
+        doReturn(new ModelAndView("landingPage")).when(spyController).doViewLanding(any(), any());
+
+        // Act
+        ModelAndView mav = spyController.doTnCUpdate(request, response);
+
+        // Assert
+        assertEquals("landingPage", mav.getViewName());
+        assertEquals("1.0", customerVO.getTcVersionNo());
+        assertEquals("Y", customerVO.getIsTCAccepted());
+        assertNotNull(customerVO.getTcAcceptedTime());
+    }
+}
