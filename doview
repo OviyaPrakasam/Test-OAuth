@@ -878,3 +878,80 @@ public ModelAndView doViewLanding(HttpServletRequest request, HttpServletRespons
 		
 		return mav;
 	}
+
+
+
+@ExtendWith(MockitoExtension.class)
+public class LandingPageControllerTest {
+
+    @InjectMocks
+    private LandingPageController landingPageController;
+
+    @Mock
+    private HttpSession session;
+
+    @Mock
+    private CustomerVO customerVO;
+
+    @Mock
+    private SecurityService securityService;
+
+    @BeforeEach
+    public void setup() {
+        // Inject SecurityService if needed
+        ReflectionTestUtils.setField(landingPageController, "securityService", securityService);
+    }
+
+    @Test
+    public void testDoViewLanding_C2CEnabled_Whitelisted_EN() {
+        try (MockedStatic<CommonUtils> commonUtilsMock = mockStatic(CommonUtils.class)) {
+
+            // Mock language and system params
+            commonUtilsMock.when(CommonUtils::getContextLanguage).thenReturn(CommonConstant.LANG_EN);
+            SysParamConstant.CBC2C_FUNC_ENABLE = true;
+            SysParamConstant.CBC2C_ENBL_FLAG_EN = true;
+            SysParamConstant.CBC2C_PILOT_ENABLE = true;
+            SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP = true;
+
+            when(customerVO.getUserId()).thenReturn("user1");
+            when(customerVO.getCustomerEBID()).thenReturn("ebid1");
+
+            when(securityService.isWhiteListUser("user1", "ebid1", SysParamConstant.CAT_CLICK2CHAT)).thenReturn(true);
+
+            // Invoke method
+            landingPageController.doViewLanding(session, customerVO);
+
+            // Verify session attributes
+            verify(session).setAttribute("isC2CFloaterEnable", true);
+            verify(session).setAttribute("c2cCustomerSegment", CommonConstant.STACY_CONFIG_BOT);
+            verify(session).setAttribute("c2cUnreadCallSkip", true);
+            verify(session).setAttribute("c2cLoginFlag", true);
+        }
+    }
+
+    @Test
+    public void testDoViewLanding_C2CDisabled() {
+        SysParamConstant.CBC2C_FUNC_ENABLE = false;
+
+        landingPageController.doViewLanding(session, customerVO);
+
+        verify(session).setAttribute("isC2CFloaterEnable", false);
+        verify(session).setAttribute("c2cCustomerSegment", CommonConstant.STACY_CONFIG_EMPTY);
+        verify(session).setAttribute("c2cLoginFlag", true);
+    }
+
+    @Test
+    public void testDoViewLanding_ExceptionHandling() {
+        try (MockedStatic<CommonUtils> commonUtilsMock = mockStatic(CommonUtils.class)) {
+            commonUtilsMock.when(CommonUtils::getContextLanguage).thenThrow(new RuntimeException("Simulated"));
+
+            landingPageController.doViewLanding(session, customerVO);
+
+            // Ensure fallback/default attributes are still set
+            verify(session).setAttribute("isC2CFloaterEnable", false);
+            verify(session).setAttribute("c2cCustomerSegment", CommonConstant.STACY_CONFIG_EMPTY);
+            verify(session).setAttribute("c2cLoginFlag", true);
+        }
+    }
+}
+
