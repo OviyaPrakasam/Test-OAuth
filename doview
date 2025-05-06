@@ -94,3 +94,79 @@ if(getCCActivationFlag){
             	session.setAttribute("isC2RMEnabled", Boolean.valueOf(isC2RMEnabled));
             	session.setAttribute("isC2RMPilotEnabled", Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
             }
+
+
+@ExtendWith(MockitoExtension.class)
+public class LandingPageControllerTest {
+
+    @InjectMocks
+    private LandingPageController landingPageController;
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @Mock
+    private HttpSession session;
+
+    @Mock
+    private MessageSource messageSource;
+
+    @Mock
+    private Logger logger;
+
+    @Mock
+    private CustomerVO customerVO;
+
+    @BeforeEach
+    public void setup() {
+        when(request.getSession()).thenReturn(session);
+    }
+
+    @Test
+    public void testDoViewLanding_CCActivationBannerDisplayed() throws Exception {
+        // Arrange
+        boolean getCCActivationFlag = true;
+        boolean isCCActivationBannerDisplay = false;
+        List<Map<String, String>> bannersList = new ArrayList<>();
+
+        Locale locale = Locale.ENGLISH;
+        when(request.getLocale()).thenReturn(locale);
+        when(messageSource.getMessage(eq("small.to.big.ibanking.label.buttonName"), any(), eq(locale)))
+            .thenReturn("Activate Now");
+        when(session.getAttribute("customerVO")).thenReturn(customerVO);
+        when(customerVO.getUserId()).thenReturn("user123");
+
+        // This would typically be passed or initialized properly inside controller
+        ReflectionTestUtils.setField(landingPageController, "messageSource", messageSource);
+        ReflectionTestUtils.setField(landingPageController, "bannersList", bannersList);
+
+        // Act
+        landingPageController.doViewLanding(request, response);
+
+        // Assert
+        assertEquals(1, bannersList.size());
+        assertEquals("Activate Now", bannersList.get(0).get("buttonName"));
+        verify(session).setAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION, true);
+    }
+
+    @Test
+    public void testDoViewLanding_BannerAlreadyDisplayed() throws Exception {
+        // Arrange
+        boolean getCCActivationFlag = true;
+        boolean isCCActivationBannerDisplay = true;
+
+        when(session.getAttribute("customerVO")).thenReturn(customerVO);
+        when(customerVO.getUserId()).thenReturn("user123");
+
+        // Act
+        landingPageController.doViewLanding(request, response);
+
+        // Assert
+        verify(logger).info(contains("has already exceeded CC activation Banner"));
+        verify(session, never()).setAttribute(eq(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION), any());
+    }
+}
+
