@@ -1,0 +1,96 @@
+if(getCCActivationFlag){
+    					//Check whether customer already exceeded max display counter. if not, manage counter
+    	    			if (!isCCActivationBannerDisplay) {
+    	    				Map<String, String> activateCreditCard= new HashMap<String, String>();
+                        	//TO DO: All the below map values to be fetched from DB in future.
+    	    				activateCreditCard.put(CustomerConstant.BANNER_KEY_IMAGE_NAME, CustomerConstant.BANNER_CC_ACTIVATION_IMG_NAME);
+                        	Locale locale = getLocale();
+                        	String buttonName = messageSource.getMessage("small.to.big.ibanking.label.buttonName", null, locale);
+                        	activateCreditCard.put(CustomerConstant.BANNER_KEY_BUTTON_NAME, buttonName);
+                        	activateCreditCard.put(CustomerConstant.BANNER_KEY_ACTION_URI, CustomerConstant.CREDIT_CARD_ACTIVATION_IBANKING_ACTION_URI);
+                            //fix but that override the banner when there are multiple banner
+//                            bannersList = new ArrayList<Map<String,String>>();
+                            bannersList.add(activateCreditCard);
+                            
+                            session.setAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION, true); //Set as true if system displays banner
+    	    			}else {    	    				
+                        	logger.info("Customer with UserID "+customerVO.getUserId()+" has already exceeded CC activation Banner display counter or displayed in customer session");
+    	    			}
+
+
+  //Check for Flag on and off. Use this to turn off in case banner is show stopper for customer. 
+    			if (SysParamConstant.EMAIL_UPDATE_POPUP_FLAG) {
+    				session.setAttribute("emailUpdateFlag", Boolean.TRUE);
+    				//Below condition is to check whether banner needs to be displayed or not
+    				if (customerBO.manageEmailUpdatePopup(isRALCCCustomer, customerVO)) { 
+    					//Show the banner only once in customer session. Customer can click on home icon and come to landing page
+    					boolean isEmailUpdateBannerDisplayed = session.getAttribute(CustomerConstant.BANNER_EMAIL_UPDATE_DISPLAYED) !=null ? (Boolean) session.getAttribute(CustomerConstant.BANNER_EMAIL_UPDATE_DISPLAYED) : false;
+    					bannerVo = new BannerDisplayCounterVO();
+    					bannerVo = customerBO.getBannerCounter(customerVO.getUserId(), CustomerConstant.EMAIL_UPDATE_DISPLAY_COUNTER_CODE);
+    					//Check whether customer already exceeded max display counter. if not, manager counter
+    	    			if (!isEmailUpdateBannerDisplayed && customerBO.validateBannerDisplayCounter(bannerVo,customerVO.getUserId(), CustomerConstant.EMAIL_UPDATE_DISPLAY_COUNTER_CODE)) {
+    	    				Map<String, String> emailUpdateBanner= new HashMap<String, String>();
+                        	//TO DO: All the below map values to be fetched from DB in future.
+                        	emailUpdateBanner.put(CustomerConstant.BANNER_KEY_IMAGE_NAME, CustomerConstant.BANNER_EMAIL_UPDATE_IMG_NAME);
+                        	Locale locale = getLocale();
+                        	emailUpdateBanner.put(CustomerConstant.BANNER_KEY_BUTTON_NAME, messageSource.getMessage("updateProfileDetails.label.buttonName", null, locale));
+                            emailUpdateBanner.put(CustomerConstant.BANNER_KEY_ACTION_URI, CustomerConstant.BANNER_EMAIL_UPDATE_ACTION_URI);
+							//fix but that override the banner when there are multiple banner
+//                            bannersList = new ArrayList<Map<String,String>>();
+                            bannersList.add(emailUpdateBanner);
+                            session.setAttribute(CustomerConstant.BANNER_EMAIL_UPDATE_DISPLAYED, true); //Set as true if system displays banner
+                            	}else {    	    				
+                        	logger.info("Customer with UserID "+customerVO.getUserId()+" has already exceeded Banner display counter or displayed in customer session");
+    	    			}                    	
+                    }else {
+                    	//Requirement is to remove link in case customer already submitted request or not eligible to see link 
+                    	session.setAttribute("emailUpdateFlag", Boolean.FALSE); // Turn off Link
+                    	if (logger.isDebugEnabled()) {
+                    		logger.debug("Customer with UserID "+customerVO.getUserId()+" is not allowed to view Email Update Banner");
+                    	}
+                    }
+
+
+            if(SysParamConstant.IBK_UMB_OBS_FLAG_VAL!=null &&
+            		SysParamConstant.IBK_UMB_OBS_FLAG_VAL.equals(CommonConstant.CONST_Y)){
+            	boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_UMBOBS);
+            	if(isWhiteListed){
+            		session.setAttribute("isUmbObsEnabled", Boolean.TRUE);
+            		session.setAttribute("umbObsMenusDisabled", Boolean.FALSE);
+            		session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
+            		
+            	}else{
+            		session.setAttribute("isUmbObsEnabled", Boolean.FALSE);
+            		session.setAttribute("umbObsMenusDisabled", Boolean.TRUE);
+            		session.setAttribute("isOCTMenuDisabled", Boolean.TRUE);
+            	}
+            }else if(SysParamConstant.IBK_UMB_OBS_FLAG_VAL!=null && SysParamConstant.IBK_UMB_OBS_FLAG_VAL.equals(CommonConstant.CONST_N)){
+            	session.setAttribute("isUmbObsEnabled", Boolean.TRUE);
+            	session.setAttribute("umbObsMenusDisabled", Boolean.FALSE);
+            	session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
+            }
+
+
+            // CODE SNIPPET FOR C2RM STARTS
+            // BELOW CODE IS ONLY REQUIRED FOR PILOT.
+            boolean isC2RMEnabled = false;
+            try{
+            	if (SysParamConstant.C2RM_FUNC_ENABLE) {
+            		if(SysParamConstant.C2RM_PILOT_ENABLE){
+            			boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_CLICK2RM);
+
+        				// ONLY FOR WHITELISTED CUSTOMER, SETTING isC2RMEnabled VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
+        				if(isWhiteListed){
+        					isC2RMEnabled = true;
+        				}
+            		} else{
+            			isC2RMEnabled = true;
+            		}
+            	}
+            } catch(Exception exception){
+            	logger.error("Exception in Setting C2RM Info: "+exception.getMessage());
+            } finally{
+            	logger.info("isC2RMEnabled "+isC2RMEnabled+" for the Customer: "+customerVO.getUserId()+"; isC2RMPilotEnabled: "+Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
+            	session.setAttribute("isC2RMEnabled", Boolean.valueOf(isC2RMEnabled));
+            	session.setAttribute("isC2RMPilotEnabled", Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
+            }
