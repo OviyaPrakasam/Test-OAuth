@@ -62,3 +62,50 @@ private void setStaticField(Class<?> clazz, String fieldName, Object value) thro
     field.setAccessible(true);
     field.set(null, value);
 }
+
+
+@Test
+void testDoViewLanding_FeatureToggleDisabled() throws Exception {
+    LandingController controller = Mockito.spy(new LandingController());
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    HttpSession session = mock(HttpSession.class);
+
+    when(request.getSession(false)).thenReturn(session);
+    when(request.getSession()).thenReturn(session);
+
+    CustomerVO customerVO = mock(CustomerVO.class);
+    when(customerVO.getCustomerId()).thenReturn("123");
+    when(customerVO.getCustomerIdType()).thenReturn("ID");
+    when(customerVO.getNickName()).thenReturn(null);
+    when(customerVO.getCustomerName1()).thenReturn("F");
+    when(customerVO.getCustomerName2()).thenReturn("L");
+    when(customerVO.getIsTCAccepted()).thenReturn("Y");
+    when(customerVO.getTcVersionNo()).thenReturn("v1");
+    doReturn(customerVO).when(controller).getCustomerVO();
+
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.SMM_TACTICAL_SOLUTION_ENABLED)).thenReturn(false);
+
+    mockStatic(UserAgentBean.class);
+    when(UserAgentBean.isMobile()).thenReturn(false);
+
+    // JSON parsing skipped as tcJsonValue is blank
+    when(session.getAttribute("tcJsonValue")).thenReturn("");
+
+    // System flags off
+    setStaticField(SysParamConstant.class, "EBBP_PILOT_ENABLE", false);
+    setStaticField(SysParamConstant.class, "IAO_PILOT_ENABLE", false);
+    setStaticField(SysParamConstant.class, "ASIAMILES_ENABLE", false);
+
+    CustomerInfo customerInfo = mock(CustomerInfo.class);
+    when(customerInfo.getIsCustomerIdPilotWhiteListed()).thenReturn(false);
+    doReturn(customerInfo).when(controller).getCustomerInfo();
+    doReturn(false).when(controller).isCCRALCustomer();
+
+    ModelAndView mav = controller.doViewLanding(request, response);
+
+    assertNotNull(mav);
+    verify(session).setAttribute("isMobileAccess", "N");
+    verify(session).setAttribute("isRALCCCustomer", "false");
+}
