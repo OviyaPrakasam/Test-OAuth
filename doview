@@ -1,24 +1,625 @@
-if(getCCActivationFlag){
-    					//Check whether customer already exceeded max display counter. if not, manage counter
-    	    			if (!isCCActivationBannerDisplay) {
-    	    				Map<String, String> activateCreditCard= new HashMap<String, String>();
-                        	//TO DO: All the below map values to be fetched from DB in future.
-    	    				activateCreditCard.put(CustomerConstant.BANNER_KEY_IMAGE_NAME, CustomerConstant.BANNER_CC_ACTIVATION_IMG_NAME);
-                        	Locale locale = getLocale();
-                        	String buttonName = messageSource.getMessage("small.to.big.ibanking.label.buttonName", null, locale);
-                        	activateCreditCard.put(CustomerConstant.BANNER_KEY_BUTTON_NAME, buttonName);
-                        	activateCreditCard.put(CustomerConstant.BANNER_KEY_ACTION_URI, CustomerConstant.CREDIT_CARD_ACTIVATION_IBANKING_ACTION_URI);
-                            //fix but that override the banner when there are multiple banner
-//                            bannersList = new ArrayList<Map<String,String>>();
-                            bannersList.add(activateCreditCard);
-                            
-                            session.setAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION, true); //Set as true if system displays banner
-    	    			}else {    	    				
-                        	logger.info("Customer with UserID "+customerVO.getUserId()+" has already exceeded CC activation Banner display counter or displayed in customer session");
-    	    			}
+public ModelAndView doViewLanding(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		ModelAndView mav = mvcResponse(VIEW_LANDING);
+		String customerDisplayName = "";
+		HttpServletRequest httpRequest = (HttpServletRequest) request;    
+		HttpSession session = httpRequest.getSession(false);
+		
+		try {
+			CustomerVO customerVO = getCustomerVO();
+			//SMM Tactical Solution
+			try {
+				if (CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.SMM_TACTICAL_SOLUTION_ENABLED)) {
+					String custRelId = customerVO.getCustomerIdType().concat(customerVO.getCustomerId());
+					SMMUIResponseVO smmuiResponseVO = customerBO.evaluateSMMBanner(custRelId);
+					if (smmuiResponseVO !=null && StringUtils.isNotBlank(smmuiResponseVO.getBannerURL())) {
+						session.setAttribute(CONST_SMM_JSON_CONFIG, smmuiResponseVO);
+						session.setAttribute("smmTempObj", smmuiResponseVO); //Keeping same object inside another to avoid loosing above one
+					}
+				}
+			}catch (Exception smmBannerException) {
+				logger.error("SMM Banner Warning :Error encountered while evaluating SMM Banner for customer---"+smmBannerException.getMessage());
+			}
+			//code for HK T&C
+			String tcJsonValue = (String) request.getSession().getAttribute("tcJsonValue");
+			try {
+				logger.debug("tcJsonValue:{},-getIsTCAccepted from customervo->"+tcJsonValue+customerVO.getIsTCAccepted());
+				if(StringUtils.isNotBlank(tcJsonValue) && StringUtils.isNotBlank(customerVO.getIsTCAccepted())
+						&& (customerVO.getIsTCAccepted().equalsIgnoreCase(CommonConstant.CONST_N)
+							|| customerVO.getIsTCAccepted().equalsIgnoreCase(CommonConstant.CONST_Y))) {
+					ObjectMapper objectMapper = new ObjectMapper();
+					JsonNode rootNode = objectMapper.readTree(tcJsonValue);
+					JsonNode termsOuterArray = rootNode.path("terms");
+					if(termsOuterArray.isArray() && !termsOuterArray.isEmpty()){
+						JsonNode termInnerArray = termsOuterArray.get(0);
+						for(JsonNode term :termInnerArray) {
+							String termVersion = (String) term.path("term-version").asText();
+							logger.debug("termVersion:{},customerVO.getTcVersionNo-:{}"+termVersion + customerVO.getTcVersionNo());
+								if(((StringUtils.isNotBlank(termVersion)) && StringUtils.isBlank(customerVO.getTcVersionNo()))
+										|| ((StringUtils.isNotBlank(termVersion)) && (StringUtils.isNotBlank(customerVO.getTcVersionNo())
+											&& !customerVO.getTcVersionNo().equalsIgnoreCase(termVersion)))){
+									session.setAttribute("tcFlagEnable",CommonConstant.CONST_Y);
+									session.setAttribute("termVersion",termVersion);
+									break;
+								}else{
+									session.setAttribute("tcFlagEnable",CommonConstant.CONST_N);
+									break;
+								}
+						}
+					}
+				}else{
+					logger.debug("else block-tcJsonValue-->"+tcJsonValue);
+					session.setAttribute("tcFlagEnable", CommonConstant.CONST_N);
+					session.setAttribute("termVersion",CommonConstant.PAD_EMPTY);
+				}
+			} catch (Exception ex){
+				logger.error("T&C flag checks"+ex.getMessage());
+			}
+	    	//TODO: To be change after eBBP Pilot rollout. Delete block below and uncomment the definition above.
+	    	// eBBP - Start
+			if (SysParamConstant.EBBP_PILOT_ENABLE) {
+				session.setAttribute("isEbbpPilotEnable", "Y");
+			} else {
+				session.setAttribute("isEbbpPilotEnable", "N");
+			}
+
+			if (getCustomerInfo().getIsCustomerIdPilotWhiteListed()) {
+				session.setAttribute("isEbbpPilotUser", "Y");
+			} else {
+				session.setAttribute("isEbbpPilotUser", "N");
+			}
+	    	// eBBP - End
+                // IAO
+			if (SysParamConstant.IAO_PILOT_ENABLE) {
+				session.setAttribute("isIAOPilotEnable", "Y");
+			} else {
+				session.setAttribute("isIAOPilotEnable", "N");
+			}
+			
+			if (SysParamConstant.ASIAMILES_ENABLE) {
+				session.setAttribute("isAsiaMilesEnable","Y");
+			} else {
+				session.setAttribute("isAsiaMilesEnable", "N");
+			}
+			
+			//checking mobile access
+			if (UserAgentBean.isMobile()) {
+				session.setAttribute("isMobileAccess", "Y");
+			} else {
+				session.setAttribute("isMobileAccess", "N");
+			}
+			
+        	//get customer mobile number            
+            String mobileNum = customerVO.getMobileNumber();
+            
+            // set customer name for display
+            if (StringUtils.isNotBlank(customerVO.getNickName()))
+            	customerDisplayName = customerVO.getNickName();            
+            else          	
+            	customerDisplayName = StringUtils.trimToEmpty(customerVO.getCustomerName1()) + " " + StringUtils.trimToEmpty(customerVO.getCustomerName2());
+            
+            //check customer role
+            boolean isRALCCCustomer = isCCRALCustomer();
+            
+            if(isRALCCCustomer){
+            	session.setAttribute("isRALCCCustomer", "true");
+            }
+            
+            //Check Wealth Lending Enabled
+			if (SysParamConstant.IS_WLD_ENABLE) {
+				session.setAttribute("isWLDEnable", "Y");
+				session.setAttribute("isWLCustomer", "false");
+				boolean isWLCustomer = isWLCustomer();
+				if (isWLCustomer) {
+					session.setAttribute("isWLCustomer", "true");
+				}
+			} else {
+				session.setAttribute("isWLDEnable", "N");
+				session.setAttribute("isWLCustomer", "false");
+			}
+			
+			if (SysParamConstant.IS_INP_ENABLE) {
+				session.setAttribute("isINPEnable", "Y");
+				session.setAttribute("isWLCustomer", "false");
+				boolean isWLCustomer = isWLCustomer();
+				if (isWLCustomer) {
+					session.setAttribute("isWLCustomer", "true");
+				}
+			} else {
+				session.setAttribute("isINPEnable", "N");
+				session.setAttribute("isWLCustomer", "false");
+			}
+			
+            session.setAttribute("segCode", customerVO.getRelTyp());
+      
+            if(StringUtils.isBlank(customerVO.getRelTyp()) 
+            		|| ((allowedStandbyCreditCustSegment.contains(customerVO.getRelTyp())) && customerVO.getSmeVO()==null)
+            		){
+            	session.setAttribute("isStandbyCreditAllowed", Boolean.TRUE);
+			} else {
+				session.setAttribute("isStandbyCreditAllowed", Boolean.FALSE);
+			}
+            
+            if(SysParamConstant.ALIPAY_PILOT_ENABLE){
+            	boolean result= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_ALIPAY);
+            	if(result){
+            		session.setAttribute("isAPayVis", Boolean.TRUE);
+            	}else{
+            		session.setAttribute("isAPayVis", Boolean.FALSE);
+            	}
+            }else{
+            	session.setAttribute("isAPayVis", Boolean.TRUE);
+            }
+            
+            if (SysParamConstant.IS_DDA_ENABLE) {
+				session.setAttribute("isDDAEnable","Y");
+			} else {
+				session.setAttribute("isDDAEnable", "N");
+			}
+            
+            //Check if Help and Services on Pilot and if customer is white listed 
+            if(SysParamConstant.HELP_AND_SERVICES_PILOT_ENABLE){
+            	boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_HELPANDSERVICE);
+            	if(isWhiteListed){
+            		session.setAttribute("isHelpAndServiceVis", "true");
+            	}else{
+            		session.setAttribute("isHelpAndServiceVis", "false");
+            	}
+       	    	
+            }else{
+            	session.setAttribute("isHelpAndServiceVis", "true");
+            }
 
 
-  //Check for Flag on and off. Use this to turn off in case banner is show stopper for customer. 
+            if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CC_PIN_CHANGE)){
+                if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CC_PIN_CHANGE_PILOT)) {
+
+                    boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_CC_PINCHANGE);
+                    if (isWhiteListed) {
+                        session.setAttribute("isCCPinChangeEnabled", Boolean.TRUE);
+                    } else {
+                        session.setAttribute("isCCPinChangeEnabled", Boolean.FALSE);
+                    }
+                }else{
+                        session.setAttribute("isCCPinChangeEnabled", Boolean.TRUE);
+                    }
+
+			}else{
+				session.setAttribute("isCCPinChangeEnabled", Boolean.FALSE);
+			}
+            
+            /***************************
+             * START - CSL-V3-ISOLATION
+             ***************************/
+            if (PilotUtils.isCSLV3IsolationPilot()) {
+            	if (getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_HELPANDSERVICE)) {
+            		session.setAttribute("isHelpServicePilotUser", "true");
+            	} else {
+            		session.setAttribute("isHelpServicePilotUser", "false");
+            	}
+            	if (getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.DAC_EMI_CLI_ISO)) {
+            		session.setAttribute("isDACEMICLIIsolationPilotUser", "true");
+            		session.setAttribute("isLilyIsolated", "true");
+            	}
+            } else {
+            	// public
+            	session.setAttribute("isLilyIsolated", "true");
+            }
+            /***************************
+             * END - CSL-V3-ISOLATION
+             ***************************/
+
+			/***************************
+			 * START - DATALOCKER-V3-ISOLATION
+			 ***************************/
+			if (PilotUtils.isDatalockerV3IsolationPilot()) {
+				if (getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_DATALOCKERV3)) {
+					session.setAttribute("isDatalockerV3PilotUser", "Y");
+				} else {
+					session.setAttribute("isDatalockerV3PilotUser", "N");
+				}
+			}else{
+				session.setAttribute("isDatalockerV3PilotUser", "N");
+			}
+			/***************************
+			 * END - DATALOCKER-V3-ISOLATION
+			 ***************************/
+   	    	
+            if (SysParamConstant.IS_DD_SI_ENABLE) {
+            	
+            	if (SysParamConstant.IS_DD_SI_PILOT_ENABLE) {
+                	boolean result= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_DD_SI);
+                	
+                	if (result)
+                		session.setAttribute("isDDSIEnable","Y");
+                	else
+                		session.setAttribute("isDDSIEnable", "N");
+    				
+    			} else {
+    				session.setAttribute("isDDSIEnable","Y");
+    			}
+				
+			} else {
+				session.setAttribute("isDDSIEnable", "N");
+			}
+			//RTOB BPA CHECK
+			if(SysParamConstant.RTOB_PILOT_ENABLE){
+				boolean result= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_AO_RTOB);
+				if(result){
+					session.setAttribute("isAORTOBEnabled", Boolean.TRUE);
+				}else{
+					session.setAttribute("isAORTOBEnabled", Boolean.FALSE);
+				}
+			}else{
+				session.setAttribute("isAORTOBEnabled", Boolean.TRUE);
+			}
+			//FXTD RTOB FLOW PILOT CHECK
+			if(SysParamConstant.RTOB_FXTD_PILOT_ENABLE){
+				boolean result= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_AO_RTOB);
+				if(result){
+					session.setAttribute("isAOTDRTOBEnabled", Boolean.TRUE);
+				}else{
+					session.setAttribute("isAOTDRTOBEnabled", Boolean.FALSE);
+				}
+			}else{
+				session.setAttribute("isAOTDRTOBEnabled", Boolean.TRUE);
+			}
+
+            // Pilot user check for card Deepening project start
+            
+            if (SysParamConstant.CARD_DEEPEN_CUSTOMER_ENABLE) {
+            	session.setAttribute("isCardCustomerEnable", "Y");
+            } else {
+            	session.setAttribute("isCardCustomerEnable", "N");
+            }
+
+            if (getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_CARD_DEEPENING)) {
+            	session.setAttribute("isCardPilotUser", "Y");
+            } else {
+            	session.setAttribute("isCardPilotUser", "N");
+            }
+            
+            // Pilot user check for card Deepening project ends
+            
+            //	CSD-DAC-CS2I - START
+            if(SysParamConstant.IS_CSD_DAC_CS2I_ENABLE){
+            	if (SysParamConstant.IS_CSD_DAC_CS2I_PILOT_ENABLE) {
+                	boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_CSD_DAC_CS2I);
+                	if(isWhiteListed){
+                		session.setAttribute("isDACCS2IEnable", "true");
+                	}else{
+                		session.setAttribute("isDACCS2IEnable", "false");
+                	}       	    	
+            	} else {
+            		session.setAttribute("isDACCS2IEnable", "true");
+            	}
+            }else{
+            	session.setAttribute("isDACCS2IEnable", "false");
+            }
+            //	CSD-DAC-CS2I - END            
+            
+            //PLTU-CCLI-BEGIN
+            
+         			
+	        //PILOT FLAG - CCLI 
+	         if ((SysParamConstant.IS_CCLI_ENABLE).equalsIgnoreCase(CommonConstant.PILOT_ENABLE) ){
+	         	
+				if ((SysParamConstant.IS_CCLI_PILOT_ENABLE)
+						.equalsIgnoreCase(CommonConstant.PILOT_ENABLE)) {
+					if (getSecurityService().isWhiteListUser(
+							customerVO.getUserId(),
+							customerVO.getCustomerEBID(),
+							CommonConstant.PILOT_FUNCD_CCLI)) {
+						session.setAttribute("isCcliPilotEnable", Boolean.TRUE);
+					} else {
+						session.setAttribute("isCcliPilotEnable", Boolean.FALSE);
+	
+					}
+				} else {
+					session.setAttribute("isCcliPilotEnable", Boolean.TRUE);
+	
+				}
+			}else{
+				session.setAttribute("isCcliPilotEnable", Boolean.FALSE);
+	
+			}
+	         //	PILOT FLAG - END
+	         //PLTU-CCLI-END
+            if(SysParamConstant.DATA_LOCKER_PILOT_ENABLE){
+            	 boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_DATALOCKER);
+                 if(isWhiteListed){
+          		    session.setAttribute("isDataLockerEnabled", "Y");
+          	      }else{
+          		    session.setAttribute("isDataLockerEnabled", "N");
+          	   	  }
+  		     }else{
+  			    session.setAttribute("isDataLockerEnabled", "Y");
+  		     }
+
+			/** P2P TRANSFER PUBLIC **/
+			session.setAttribute("isP2PEnabled", Boolean.TRUE);
+
+            // OAFT WFX Migrtaion
+            updateOAFT_WFX_PublicPilotStatus(customerVO,session);
+            /** FPS TRANSFER PUBLIC **/
+            session.setAttribute("isFPSThirdPartyPublicLaunch", Boolean.TRUE);
+        	/** FPS EDDA PUBLIC **/
+            session.setAttribute("isFPSDDAPublicLaunch", Boolean.TRUE);
+            
+
+            // CODE SNIPPET FOR CBC2C STARTS
+            String c2cCustomerSegment = CommonConstant.STACY_CONFIG_EMPTY;
+            boolean isC2CFloaterEnable = false;
+            try{
+            	// CHECKING WHETHER C2C FUNCTION IS ENABLED
+            	if(SysParamConstant.CBC2C_FUNC_ENABLE){
+            		String customerLanguage = CommonUtils.getContextLanguage();
+            		// GETTING LANG CONFIG
+            		boolean isCBC2CLangEnabled = false;
+            		if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_EN)) {		
+            			isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_EN;
+            		} else if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_SIMPLIFIED_CHINESE)) {
+            			isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_ZH_CN;
+            		} else if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_TRADITIONAL_CHINESE)) {
+            			isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_ZH_HK; 
+            		}
+            		logger.info("CBC2C Stacy Enabled for Language "+customerLanguage+"?: "+isCBC2CLangEnabled);
+
+            		// ENABLE C2C / BOT ONLY IF LANG CONFIG IS ENABLED
+            		if(isCBC2CLangEnabled){
+            			// PILOT CHECKING FOR CBC2C
+            			if(SysParamConstant.CBC2C_PILOT_ENABLE){
+            				boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_CLICK2CHAT);
+
+            				// ONLY FOR WHITELISTED CUSTOMER, SETTING isC2CFloaterEnable VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
+            				if(isWhiteListed){
+            					isC2CFloaterEnable = true;
+            					c2cCustomerSegment = CommonConstant.STACY_CONFIG_BOT;
+            					logger.info("CBC2C Stacy Enabled for "+customerVO.getUserId());
+        						boolean c2cSkipLBUnreadCall = SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP;
+        						session.setAttribute("c2cUnreadCallSkip", c2cSkipLBUnreadCall);
+            				} 
+            			} else {
+            				// IF CBC2C FUNCTION ENABLED BUT PILOT FLAG IS DISABLED, SETTING isC2CFloaterEnable VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
+            				isC2CFloaterEnable = true;
+            				c2cCustomerSegment = CommonConstant.STACY_CONFIG_BOT;
+            				logger.info("CBC2C Stacy Enabled for "+customerVO.getUserId());
+            				boolean c2cSkipLBUnreadCall = SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP;
+    						session.setAttribute("c2cUnreadCallSkip", c2cSkipLBUnreadCall);
+            			}
+            		}
+            	}             
+            } catch(Exception exception){
+            	logger.error("Exception in Setting CBC2C Info: "+exception.getMessage());
+            } finally{
+            	session.setAttribute("isC2CFloaterEnable", Boolean.valueOf(isC2CFloaterEnable));
+            	session.setAttribute("c2cCustomerSegment", c2cCustomerSegment);
+            	session.setAttribute("c2cLoginFlag", Boolean.TRUE);
+            }
+
+            List<String> c2cScriptSkipPageList = new ArrayList<String>();
+            try{
+	            // GETTING THE LIST OF PAGES IN WHICH STACY SCRIPT SHOULD NOT BE LOADED
+				if(StringUtils.isNotBlank(c2cCustomerSegment)){
+					List<ReferenceDataVO> referenceDataList = lookupService.getReferenceDataList(CommonConstant.STACY_SKIP_SCRIPT_LOGICAL_NAME, 
+			         		CommonConstant.DEVICE_GROUP_MSIE, CommonConstant.LANG_EN);
+					
+					if (CollectionUtils.isNotEmpty(referenceDataList)) {
+			             for (ReferenceDataVO referenceDataVO : referenceDataList) {
+			             	if (!StringUtils.isEmpty(StringUtils.trimToEmpty(referenceDataVO.getRefCd()))) {
+			             		if(referenceDataVO.getRefValue().equals("true")){
+			             			c2cScriptSkipPageList.add(referenceDataVO.getRefCd());
+			             		}
+			             	}            
+			             }
+					}	
+				}
+            } catch(Exception exception){
+            	logger.error("Exception in Setting c2cScriptSkipPageList: "+exception.getMessage());
+            } finally{
+				logger.debug("c2cScriptSkipPageList --> "+c2cScriptSkipPageList);
+            	session.setAttribute("c2cScriptSkipPageList", c2cScriptSkipPageList);
+            }
+
+            // CODE SNIPPET FOR CBC2C ENDS
+            
+            
+            
+            // CODE SNIPPET FOR C2RM STARTS
+            // BELOW CODE IS ONLY REQUIRED FOR PILOT.
+            boolean isC2RMEnabled = false;
+            try{
+            	if (SysParamConstant.C2RM_FUNC_ENABLE) {
+            		if(SysParamConstant.C2RM_PILOT_ENABLE){
+            			boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_CLICK2RM);
+
+        				// ONLY FOR WHITELISTED CUSTOMER, SETTING isC2RMEnabled VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
+        				if(isWhiteListed){
+        					isC2RMEnabled = true;
+        				}
+            		} else{
+            			isC2RMEnabled = true;
+            		}
+            	}
+            } catch(Exception exception){
+            	logger.error("Exception in Setting C2RM Info: "+exception.getMessage());
+            } finally{
+            	logger.info("isC2RMEnabled "+isC2RMEnabled+" for the Customer: "+customerVO.getUserId()+"; isC2RMPilotEnabled: "+Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
+            	session.setAttribute("isC2RMEnabled", Boolean.valueOf(isC2RMEnabled));
+            	session.setAttribute("isC2RMPilotEnabled", Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
+            }
+            // CODE SNIPPET FOR C2RM ENDS
+            
+            session.setAttribute("isWealthFXEnable", Boolean.TRUE);
+            
+            //CR1430 Banca Pilot
+            if (SysParamConstant.BANCA_PILOT_ENABLE){
+            		boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_BANCA_PILOT);
+            		if(isWhiteListed){
+                		session.setAttribute("isBancaVis", Boolean.TRUE);
+                		session.setAttribute("bancaMenusDisabled", Boolean.FALSE);
+                	}else{
+                		session.setAttribute("isBancaVis", Boolean.FALSE);
+                		session.setAttribute("bancaMenusDisabled", Boolean.TRUE);
+                	} 		
+            } else {
+            	session.setAttribute("isBancaVis", Boolean.TRUE);
+            	session.setAttribute("bancaMenusDisabled", Boolean.FALSE);
+            }
+            if(SysParamConstant.IBK_UMB_OBS_FLAG_VAL!=null &&
+            		SysParamConstant.IBK_UMB_OBS_FLAG_VAL.equals(CommonConstant.CONST_Y)){
+            	boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_UMBOBS);
+            	if(isWhiteListed){
+            		session.setAttribute("isUmbObsEnabled", Boolean.TRUE);
+            		session.setAttribute("umbObsMenusDisabled", Boolean.FALSE);
+            		session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
+            		
+            	}else{
+            		session.setAttribute("isUmbObsEnabled", Boolean.FALSE);
+            		session.setAttribute("umbObsMenusDisabled", Boolean.TRUE);
+            		session.setAttribute("isOCTMenuDisabled", Boolean.TRUE);
+            	}
+            }else if(SysParamConstant.IBK_UMB_OBS_FLAG_VAL!=null && SysParamConstant.IBK_UMB_OBS_FLAG_VAL.equals(CommonConstant.CONST_N)){
+            	session.setAttribute("isUmbObsEnabled", Boolean.TRUE);
+            	session.setAttribute("umbObsMenusDisabled", Boolean.FALSE);
+            	session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
+            }
+            
+           /* if(SysParamConstant.IBK_UMB_OBS_OCT_REL_MENU_DISP !=null && 
+            		SysParamConstant.IBK_UMB_OBS_OCT_REL_MENU_DISP.equals("Y")){
+            	session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
+            }else{
+            	session.setAttribute("isOCTMenuDisabled", Boolean.TRUE);
+            }*/
+            
+            
+          
+            session.setAttribute("isBancaDetailHideMenu", CollectionUtils.isEmpty(getInsuranceList()) ? "true":"false");
+            //Added for Email Update Banner inside Popup            
+
+	   if (SysParamConstant.MPF_PILOT_ENABLE.booleanValue()) {
+		boolean isWhiteListed = getSecurityService().isWhiteListUser(
+	              customerVO.getUserId(), customerVO.getCustomerEBID(),"MPF");
+
+		if (isWhiteListed)
+			session.setAttribute("isMPFVis", Boolean.TRUE);
+		else
+			session.setAttribute("isMPFVis", Boolean.FALSE);
+		} else {
+				session.setAttribute("isMPFVis", Boolean.TRUE);
+			}
+            
+	   	//CCPL Pilot
+	   	if (SysParamConstant.IC2_PILOT_ENABLE.booleanValue()) {
+			boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(),SysParamConstant.CAT_CCPL_PILOT);
+
+			if (isWhiteListed)
+				session.setAttribute("isIC2Enabled", Boolean.TRUE);
+			else
+				session.setAttribute("isIC2Enabled", Boolean.FALSE);
+		} else {
+			session.setAttribute("isIC2Enabled", Boolean.TRUE);
+	   	}
+            
+		/***************************
+        * START - HK-TDCSL pilot
+        ***************************/
+			if (PilotUtils.isHKTDCSLPilot()) {
+				if (getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(),CommonConstant.PILOT_FUNCD_HKTDCSL)) {
+					session.setAttribute("isHKTDCSLPilot", "true");
+				} else {
+					session.setAttribute("isHKTDCSLPilot", "false");
+				}
+			} else {
+       	// public
+       	session.setAttribute("isHKTDCSLPilot", "true");
+       }
+		if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CCPL_CODE_ENABLE)){	
+			if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CCPL_PILOT_ENABLE)){
+           	 boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_CCPL);
+                if(isWhiteListed){
+         		    session.setAttribute("isCCPLEnabled", Boolean.TRUE);
+         	      }else{
+         		    session.setAttribute("isCCPLEnabled", Boolean.FALSE);
+         	   	  }
+ 		     }else{
+ 			    session.setAttribute("isCCPLEnabled", Boolean.TRUE);
+ 		     }
+		}else{
+ 		    session.setAttribute("isCCPLEnabled", Boolean.FALSE);
+	   	  }
+		session.setAttribute("ccplCodeEnabled", CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CCPL_CODE_ENABLE));
+		session.setAttribute("getCCActivationFlag", Boolean.FALSE);
+
+		boolean idSyncFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.ADOBE_ICMID_ENABLE);
+        boolean pegaBannerFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.PEGA_BANNER_ENABLE);
+		boolean welcomeTopBannerFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.BANNER_WELCOME_TOP_ENABLE);
+		boolean bottomLeftBannerFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.BANNER_BOTTOM_LEFT_ENABLE);
+		boolean bottomRightBannerFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.BANNER_BOTTOM_RIGHT_ENABLE);
+		boolean pageBottomBannerFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.BANNER_PAGE_BOTTOM_ENABLE);
+		boolean cardSummaryBannerFlag= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.BANNER_CARD_SUMMARY_ENABLE);
+		boolean manageCNPLimitQuickLinkFlag = CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.MANAGE_CNP_LIMITS_ENABLE);
+        boolean replaceDebitCardEnable =     CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.REPLACE_DEBIT_CARD_ENABLE);
+        boolean manageDebitLimitQuickLinkFlag =     CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.DEBIT_CARD_MANAGE_LIMITS_ENABLE);
+
+		session.setAttribute("icmProfileIdEnabled",Boolean.valueOf(idSyncFlag));
+		session.setAttribute("pegaBannerEnabled",Boolean.valueOf(pegaBannerFlag));
+        session.setAttribute("welcomeTopBannerEnabled",Boolean.valueOf(welcomeTopBannerFlag));
+		session.setAttribute("bottomLeftBannerEnabled",Boolean.valueOf(bottomLeftBannerFlag));
+		session.setAttribute("bottomRightBannerEnabled",Boolean.valueOf(bottomRightBannerFlag));
+		session.setAttribute("pageBottomBannerEnabled",Boolean.valueOf(pageBottomBannerFlag));
+		session.setAttribute("cardSummaryBannerEnabled",Boolean.valueOf(cardSummaryBannerFlag));
+        session.setAttribute("manageCNPLimitQuickLinkFlag",Boolean.valueOf(manageCNPLimitQuickLinkFlag));
+        session.setAttribute("replaceDCNewLink", Boolean.valueOf(replaceDebitCardEnable));
+        session.setAttribute("dcManagelimitsQuickLinkFlag", Boolean.valueOf(manageDebitLimitQuickLinkFlag));
+
+		probeCLIEnableCheck(session, customerVO);
+
+       /***************************
+        * END - HK-TDCSL pilot
+        ***************************/	
+			
+	        //Changes for Click2Chat
+            String customerId = customerVO.getCustomerId();
+            String customerSegment = customerVO.getRelTyp();
+            String customerLanguage = customerVO.getLanguage();
+            String customerARMCode = customerVO.getArmCode();
+            CustomerProfileVO customerprofileVO = getCustomerProfileVO();
+            String customerGender = customerprofileVO.getSex();
+            String customerIdType = customerVO.getCustomerIdType();
+            String icmId = customerprofileVO.getIcmID();
+            mav.addObject("customerId", customerId);
+            mav.addObject("customerSegment", customerSegment);
+            mav.addObject("customerLanguage", customerLanguage);
+            mav.addObject("customerARMCode", customerARMCode);
+            mav.addObject("customerGender", customerGender);
+            mav.addObject("customerIdType", customerIdType);
+			session.setAttribute("icmProfileId", icmId);
+			if(idSyncFlag){
+				session.setAttribute(CommonConstant.CUSTOMER_LILY_ID,icmId);
+			}
+			boolean isCCPLEnabled = Boolean.FALSE;
+            boolean isCCPLCodeEnabled = Boolean.FALSE;
+            isCCPLEnabled = session.getAttribute("isCCPLEnabled") !=null ? (Boolean) session.getAttribute("isCCPLEnabled") : false;
+            isCCPLCodeEnabled = session.getAttribute("ccplCodeEnabled") !=null ? (Boolean) session.getAttribute("ccplCodeEnabled") : false;
+
+            if(SysParamConstant.IS_ADOBE_LAUNCH_ENABLED &&  
+            		StringUtils.isNotBlank(SysParamConstant.ADOBE_LAUNCH_URL) && 
+            		StringUtils.equalsIgnoreCase("null", SysParamConstant.ADOBE_LAUNCH_URL) == Boolean.FALSE.booleanValue()
+            	){
+            	session.setAttribute("isAdobeLaunchEnabled", Boolean.TRUE);
+            	session.setAttribute("adobeLaunchURL", SysParamConstant.ADOBE_LAUNCH_URL);
+            }else{
+            	session.setAttribute("isAdobeLaunchEnabled", Boolean.FALSE);
+            }
+
+            //Added for Email Update Banner inside Popup            
+            //Below banner Map is created only if Solo card card and Email address not available and some other conditions               
+            //Below logic is catered to manage multiple banners in future.
+			//fix but that override the banner when there are multiple banner
+            List<Map<String,String>> bannersList = new ArrayList<>();
+            BannerDisplayCounterVO bannerVo = null;
+            try {   
+            	//Check for Flag on and off. Use this to turn off in case banner is show stopper for customer. 
     			if (SysParamConstant.EMAIL_UPDATE_POPUP_FLAG) {
     				session.setAttribute("emailUpdateFlag", Boolean.TRUE);
     				//Below condition is to check whether banner needs to be displayed or not
@@ -49,124 +650,231 @@ if(getCCActivationFlag){
                     		logger.debug("Customer with UserID "+customerVO.getUserId()+" is not allowed to view Email Update Banner");
                     	}
                     }
+    			}else {
+    				session.setAttribute("emailUpdateFlag", Boolean.FALSE); //Turn off Link
+    			}
+    			
+    			if(SysParamConstant.CREDIT_CARD_ACTIVATION_POPUP_FLAG && isCCPLEnabled && isCCPLCodeEnabled){
+    				session.setAttribute("CCActivationBannerDisplay", Boolean.TRUE);
+    				boolean isCCActivationBannerDisplay = session.getAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION) !=null ? (Boolean) session.getAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION) : false;
+    				Boolean getCCActivationFlag = getCCActivationFlag(customerVO,isCCActivationBannerDisplay);
+    				session.setAttribute("getCCActivationFlag", getCCActivationFlag);	
+    				mav.addObject(CustomerConstant.BANNER_CC_ACTIVATION_FLAG, getCCActivationFlag.toString());
+    				if(getCCActivationFlag){
+    					//Check whether customer already exceeded max display counter. if not, manage counter
+    	    			if (!isCCActivationBannerDisplay) {
+    	    				Map<String, String> activateCreditCard= new HashMap<String, String>();
+                        	//TO DO: All the below map values to be fetched from DB in future.
+    	    				activateCreditCard.put(CustomerConstant.BANNER_KEY_IMAGE_NAME, CustomerConstant.BANNER_CC_ACTIVATION_IMG_NAME);
+                        	Locale locale = getLocale();
+                        	String buttonName = messageSource.getMessage("small.to.big.ibanking.label.buttonName", null, locale);
+                        	activateCreditCard.put(CustomerConstant.BANNER_KEY_BUTTON_NAME, buttonName);
+                        	activateCreditCard.put(CustomerConstant.BANNER_KEY_ACTION_URI, CustomerConstant.CREDIT_CARD_ACTIVATION_IBANKING_ACTION_URI);
+                            //fix but that override the banner when there are multiple banner
+//                            bannersList = new ArrayList<Map<String,String>>();
+                            bannersList.add(activateCreditCard);
+                            
+                            session.setAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION, true); //Set as true if system displays banner
+    	    			}else {    	    				
+                        	logger.info("Customer with UserID "+customerVO.getUserId()+" has already exceeded CC activation Banner display counter or displayed in customer session");
+    	    			}
+    				}else {
+                    	//Requirement is to remove link in case customer already submitted request or not eligible to see link 
+                    	session.setAttribute("CCActivationBannerDisplay", Boolean.FALSE); // Turn off Link
+                    	if (logger.isDebugEnabled()) {
+                    		logger.debug("Customer with UserID "+customerVO.getUserId()+" is not allowed to view Credit Card Activation Banner");
+                    	}
+                    }
+    			}else {
+    				session.setAttribute("CCActivationBannerDisplay", Boolean.FALSE); //Turn off Link
+    			}
+    			
+				//eAdvice banner
+				addEAdviceBanner(request, bannersList);
+            }catch (Exception e) {
+            	logger.error("Swallowing Popup Display banner error --->"+e.getMessage());
+            }  
+            mav.addObject("bannersList", bannersList);
+            
+            //This attribute enables Or disables Popup container based on banners availability
+            mav.addObject("showPopupContainer", CollectionUtils.isNotEmpty(bannersList)? "Y":"N");
 
+            //Popup logic finishes 
 
-            if(SysParamConstant.IBK_UMB_OBS_FLAG_VAL!=null &&
-            		SysParamConstant.IBK_UMB_OBS_FLAG_VAL.equals(CommonConstant.CONST_Y)){
-            	boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_UMBOBS);
-            	if(isWhiteListed){
-            		session.setAttribute("isUmbObsEnabled", Boolean.TRUE);
-            		session.setAttribute("umbObsMenusDisabled", Boolean.FALSE);
-            		session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
-            		
-            	}else{
-            		session.setAttribute("isUmbObsEnabled", Boolean.FALSE);
-            		session.setAttribute("umbObsMenusDisabled", Boolean.TRUE);
-            		session.setAttribute("isOCTMenuDisabled", Boolean.TRUE);
-            	}
-            }else if(SysParamConstant.IBK_UMB_OBS_FLAG_VAL!=null && SysParamConstant.IBK_UMB_OBS_FLAG_VAL.equals(CommonConstant.CONST_N)){
-            	session.setAttribute("isUmbObsEnabled", Boolean.TRUE);
-            	session.setAttribute("umbObsMenusDisabled", Boolean.FALSE);
-            	session.setAttribute("isOCTMenuDisabled", Boolean.FALSE);
+            // add total unread email.
+            mav.addObject("totalUnreadEmail", getTotalNewEmail(customerVO.getCustomerEBID()));
+            //add phone number.
+            mav.addObject("mobileNum", mobileNum);
+            mav.addObject("customerDisplayName", customerDisplayName);
+            //SOFT TOKEN LAUNCH
+            if (softTokenBO.isEligibleForIntro(customerVO)) {
+            	String accessToken = (String) request.getSession().getAttribute(ACCESS_TOKEN_KEY);
+        		String authorizationHeader = "Bearer " + accessToken;
+            	Long stGracePeriodInDays = softTokenBO.getCutoverCountDownDays(authorizationHeader);
+            	if (stGracePeriodInDays != null && stGracePeriodInDays > 0)
+            		mav.addObject("stGracePeriodInDays", stGracePeriodInDays);
             }
-
-
-            // CODE SNIPPET FOR C2RM STARTS
-            // BELOW CODE IS ONLY REQUIRED FOR PILOT.
-            boolean isC2RMEnabled = false;
+            String ostTargetPage=(String)session.getAttribute(SSOConstant.SSO_OST_TPAGE);
+            if(StringUtils.isNotBlank(ostTargetPage) && ostTargetPage.equalsIgnoreCase(SSOConstant.SSO_UPDATE_PROFILE)){
+            	session.removeAttribute(SSOConstant.SSO_OST_TPAGE);
+            	return new ModelAndView(getRedirectView(request, SSOConstant.SSO_DATA_LOCKER_PAGE));
+            }
+            /* this flag used to display isDigital2faEnable to pilot users on SSO redirection back*/
             try{
-            	if (SysParamConstant.C2RM_FUNC_ENABLE) {
-            		if(SysParamConstant.C2RM_PILOT_ENABLE){
-            			boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_CLICK2RM);
-
-        				// ONLY FOR WHITELISTED CUSTOMER, SETTING isC2RMEnabled VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
-        				if(isWhiteListed){
-        					isC2RMEnabled = true;
-        				}
-            		} else{
-            			isC2RMEnabled = true;
+            	Boolean isDigital2faEnable= Boolean.valueOf(lookupService.getShortLivedSysParamValue(SysParamConstant.CAT_DIGITAL_2FA_LAUNCH, SysParamConstant.CD_DIGITAL_2FA_ENABLE));
+            	String isDigital2faPilotEnable=lookupService.getShortLivedSysParamValue(SysParamConstant.CAT_DIGITAL_2FA_LAUNCH, SysParamConstant.CD_DIGITAL_2FA_PILOT);
+            	if(isDigital2faEnable){
+            		boolean flag=false;
+            		if(CommonConstant.CONST_Y.equalsIgnoreCase(isDigital2faPilotEnable)){// pilot launch to check whitelist Users
+            			flag= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_DIGITAL2FA);
+            		}if(CommonConstant.CONST_N.equalsIgnoreCase(isDigital2faPilotEnable)){// public launch
+            			flag=true;
             		}
+            		session.setAttribute(CustomerConstant.IS_DIGITAL_2FA_FLAG, flag);
+            	}else{
+            		session.setAttribute(CustomerConstant.IS_DIGITAL_2FA_FLAG, false);
             	}
-            } catch(Exception exception){
-            	logger.error("Exception in Setting C2RM Info: "+exception.getMessage());
-            } finally{
-            	logger.info("isC2RMEnabled "+isC2RMEnabled+" for the Customer: "+customerVO.getUserId()+"; isC2RMPilotEnabled: "+Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
-            	session.setAttribute("isC2RMEnabled", Boolean.valueOf(isC2RMEnabled));
-            	session.setAttribute("isC2RMPilotEnabled", Boolean.valueOf(SysParamConstant.C2RM_PILOT_ENABLE));
+            }catch(Exception e){
+            	session.setAttribute(CustomerConstant.IS_DIGITAL_2FA_FLAG, false);
+            	logger.error("Error occurred while isDigital2FAEnableCheck for Digital 2FA in Landing page --->"+e.getMessage());
             }
 
+            /** Insurance Portolio pilot **/
+			try{
+				Boolean isInsurancePortfolioEnable= CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.INSURANCE_PORTFOLIO_FEATURE_ENABLE);
+				Boolean isInsurancePortfolioPilotEnable=CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.INSURANCE_PORTFOLIO_PILOT_ENABLE);
+				if(isInsurancePortfolioEnable){
+					boolean flag=true;
+					if(isInsurancePortfolioPilotEnable){// pilot launch to check whitelist Users
+						flag= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), "INSURANCE_PORTFOLIO");
+					}
+					session.setAttribute("IS_INSTURANCE_PORTFOLIO_FLAG", flag);
+				}else{
+					session.setAttribute("IS_INSTURANCE_PORTFOLIO_FLAG", false);
+				}
+			}catch(Exception e){
+				session.setAttribute("IS_INTURANCE_PORTFOLIO_FLAG", false);
+				logger.error("Error occurred while isInsturancePortfolioEnableCheck for Insturance Portfolio in Landing page --->"+e.getMessage());
+			}
 
-@ExtendWith(MockitoExtension.class)
-public class LandingPageControllerTest {
+            //MPF PH2
+            try{
+        		Boolean isMpfPh2Enable= Boolean.valueOf(lookupService.getShortLivedSysParamValue(SysParamConstant.CAT_MPF_PH2_ENABLE, SysParamConstant.CD_MPF_PH2_STATUS));
+        		String isMpfPh2PilotEnable=lookupService.getShortLivedSysParamValue(SysParamConstant.CAT_MPF_PH2_ENABLE,SysParamConstant.CD_MPF_PH2_PILOT_ENABLE);
+        		if(isMpfPh2Enable){
+        			boolean flag=false;
+        			if(CommonConstant.CONST_Y.equalsIgnoreCase(isMpfPh2PilotEnable)){// pilot launch to check whitelist Users
+        				flag= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_MPF_PH2);
+        			}if(CommonConstant.CONST_N.equalsIgnoreCase(isMpfPh2PilotEnable)){// public launch
+        				flag=true;
+        			}
+        			session.setAttribute("isMPFPh2Enabled", flag);
+        		}
+        	}catch(Exception e){
+        		session.setAttribute("isMPFPh2Enabled", false);
+        		logger.error("Error occurred while isMPFPilotCheckEnable for MPFPH2 "+ e.getMessage());
+        	}
+            //ORR R360
+            /* this flag to enable latest Orr360 function Enable or Disable */
+            try{
+            Boolean isOrrR360Enable = Boolean.valueOf(lookupService.getSysParamValue(SysParamConstant.CAT_ORR_PILOT, SysParamConstant.CD_ORR_R360_ENABLE));
+            /* this flag used to display latest orr360 sso link to pilot users */
+            Boolean isOrrR360PilotEnable = Boolean.valueOf(lookupService.getSysParamValue(SysParamConstant.CAT_ORR_PILOT, SysParamConstant.CD_ORR_PILOT));
+            logger.info("LandingPage:isOrrR360Enable>>>"+isOrrR360Enable+":"+"LandingPage:isOrrR360PilotEnable>>>"+isOrrR360PilotEnable);
+            if(isOrrR360Enable){
+	            if (isOrrR360PilotEnable){
+	        		boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_ORR_PILOT);
+	        		if(isWhiteListed){
+	            		session.setAttribute("isOrrR360", Boolean.TRUE);
+	            	}else{
+	            		session.setAttribute("isOrrR360", Boolean.FALSE);
+	            	} 		
+		        } else {
+		        	session.setAttribute("isOrrR360", Boolean.TRUE);
+		        }
+            }
+            }catch(Exception e){
+            	logger.error("Swallowing the errors of ORR R360>>>>>>");
+            }
+            //ORR R360
+            //ClickToPay -- Start
+            if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CLICK2PAY_FEATURE_ENABLE)){
+            	if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.CLICK2PAY_PILOT_ENABLED)){
+            		boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.FUNCD_CLICKTOPAY);
+            		if(isWhiteListed)
+            			session.setAttribute("isClickToPayEnabled", Boolean.TRUE);
+            		else{
+            			session.setAttribute("isClickToPayEnabled", Boolean.FALSE);
+            		}
+            	}else{
+            		session.setAttribute("isClickToPayEnabled", Boolean.TRUE);
+            	}
+            }else{
+            	session.setAttribute("isClickToPayEnabled", Boolean.FALSE);
+            }
+            //ClickToPay -- End
+			//CR4181
+			if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.KEY_IS_ENABLE_ST_2FA_OTP) &&
+					StringUtils.equals(customerVO.getTwoFAType(), TMXConstant.SOFTTOKEN_CODE)){
+				if(request.getSession(false)!=null &&
+						request.getSession(false).getAttribute("loginTMXRiskStatus") !=null){
+					request.getSession(false).removeAttribute("loginTMXRiskStatus");
+				}
+				if(request.getSession(false)!=null &&
+						request.getSession(false).getAttribute("loginTMXRiskOTPEnabled") !=null){
+					request.getSession(false).removeAttribute("loginTMXRiskOTPEnabled");
+				}
+			}
+			//CR4181
 
-    @InjectMocks
-    private LandingPageController landingPageController;
+			session.setAttribute("isHoganDownBannerEnabled", CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.BANNER_WHEN_HOGAN_DOWN_ENABLE));
+			//DDAE Amend Migration
+			session.setAttribute("isDDAEAmendMigrationEnable", CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.DDAE_AMEND_MIGRATION_ENABLE));
+			//HKMA Open Banking Permission
+			if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.HKMA_OPEN_BANKING_PERMISSION_ENABLE)){
+				if(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.HKMA_OPEN_BANKING_PERMISSION_PILOT_ENABLE)) {
 
-    @Mock
-    private HttpServletRequest request;
+					boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_HKMA_PERMISSION);
+					if (isWhiteListed) {
+						session.setAttribute("isOpenBankingPermissionEnable","Y");
+					} else {
+						session.setAttribute("isOpenBankingPermissionEnable","N");
+					}
+				}else{
+					session.setAttribute("isOpenBankingPermissionEnable","Y");
+				}
+			}else{
+				session.setAttribute("isOpenBankingPermissionEnable","N");
+			}
+			
+			//TAP enable flag
+			boolean tapReportEnable = customerBO.isAvailableModuleForUserId(getSecurityService(), customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.TAP_REPORT_ENABLE, CommonConstant.TAP_REPORT_PILOT_ENABLE, CommonConstant.PILOT_FUNCD_TAP_REPORT);
+			session.setAttribute("isTapReportEnable",tapReportEnable);
+			logger.info("Landing Tap Report Enbale Flag=" + tapReportEnable + ", userId=" + customerVO.getUserId() + ", EBID = " + customerVO.getCustomerEBID());
 
-    @Mock
-    private HttpServletResponse response;
+			boolean btoEnable = customerBO.isAvailableModuleForUserId(getSecurityService(), customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.BTO_ENABLE, CommonConstant.BTO_PILOT_ENABLE, CommonConstant.PILOT_FUNCD_BTO);
+			session.setAttribute("isBtoEnable",btoEnable);
+			logger.info("Landing Bto Enbale Flag=" + btoEnable + ", userId=" + customerVO.getUserId() + ", EBID = " + customerVO.getCustomerEBID());
 
-    @Mock
-    private HttpSession session;
+			if (SysParamConstant.HIGH_RISK_PILOT_ENABLE.booleanValue()) {
+				boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(),SysParamConstant.HRA_PILOT);
+				if (isWhiteListed) {
+					session.setAttribute("isHighRiskMenuEnabled", Boolean.TRUE);
+				}else {
+					session.setAttribute("isHighRiskMenuEnabled", Boolean.FALSE);
+				}
+			} else {
+				session.setAttribute("isHighRiskMenuEnabled", Boolean.TRUE);
+			}
 
-    @Mock
-    private MessageSource messageSource;
-
-    @Mock
-    private Logger logger;
-
-    @Mock
-    private CustomerVO customerVO;
-
-    @BeforeEach
-    public void setup() {
-        when(request.getSession()).thenReturn(session);
-    }
-
-    @Test
-    public void testDoViewLanding_CCActivationBannerDisplayed() throws Exception {
-        // Arrange
-        boolean getCCActivationFlag = true;
-        boolean isCCActivationBannerDisplay = false;
-        List<Map<String, String>> bannersList = new ArrayList<>();
-
-        Locale locale = Locale.ENGLISH;
-        when(request.getLocale()).thenReturn(locale);
-        when(messageSource.getMessage(eq("small.to.big.ibanking.label.buttonName"), any(), eq(locale)))
-            .thenReturn("Activate Now");
-        when(session.getAttribute("customerVO")).thenReturn(customerVO);
-        when(customerVO.getUserId()).thenReturn("user123");
-
-        // This would typically be passed or initialized properly inside controller
-        ReflectionTestUtils.setField(landingPageController, "messageSource", messageSource);
-        ReflectionTestUtils.setField(landingPageController, "bannersList", bannersList);
-
-        // Act
-        landingPageController.doViewLanding(request, response);
-
-        // Assert
-        assertEquals(1, bannersList.size());
-        assertEquals("Activate Now", bannersList.get(0).get("buttonName"));
-        verify(session).setAttribute(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION, true);
-    }
-
-    @Test
-    public void testDoViewLanding_BannerAlreadyDisplayed() throws Exception {
-        // Arrange
-        boolean getCCActivationFlag = true;
-        boolean isCCActivationBannerDisplay = true;
-
-        when(session.getAttribute("customerVO")).thenReturn(customerVO);
-        when(customerVO.getUserId()).thenReturn("user123");
-
-        // Act
-        landingPageController.doViewLanding(request, response);
-
-        // Assert
-        verify(logger).info(contains("has already exceeded CC activation Banner"));
-        verify(session, never()).setAttribute(eq(CustomerConstant.BANNER_CREDIT_CARD_ACTIVATION), any());
-    }
-}
-
+		} catch (Exception e) {
+            mav = handleException(mav, e);
+		}
+		
+		if(null != request.getSession(false) && null != request.getSession(false).getAttribute("routeToDL")) {
+			request.getSession(false).removeAttribute("routeToDL");
+			return new ModelAndView(getRedirectView(request, DATA_LOCKER_ENTRY));
+    	}
+		
+		return mav;
+	}
