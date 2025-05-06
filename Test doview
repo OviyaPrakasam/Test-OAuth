@@ -1,0 +1,64 @@
+@Test
+void testDoViewLanding_WithAllScenariosCovered() throws Exception {
+    LandingController controller = Mockito.spy(new LandingController());
+
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    HttpServletResponse response = mock(HttpServletResponse.class);
+    HttpSession session = mock(HttpSession.class);
+
+    when(request.getSession(false)).thenReturn(session);
+    when(request.getSession()).thenReturn(session);
+
+    // Mock CustomerVO and internal methods
+    CustomerVO customerVO = mock(CustomerVO.class);
+    when(customerVO.getCustomerId()).thenReturn("123");
+    when(customerVO.getCustomerIdType()).thenReturn("ID");
+    when(customerVO.getMobileNumber()).thenReturn("9876543210");
+    when(customerVO.getNickName()).thenReturn("Nick");
+    when(customerVO.getCustomerName1()).thenReturn("First");
+    when(customerVO.getCustomerName2()).thenReturn("Last");
+    when(customerVO.getIsTCAccepted()).thenReturn("N");
+    when(customerVO.getTcVersionNo()).thenReturn("v1");
+    doReturn(customerVO).when(controller).getCustomerVO();
+
+    // SMM feature
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.getFeatureToggleFlag(FeatureToggleConstant.SMM_TACTICAL_SOLUTION_ENABLED)).thenReturn(true);
+
+    SMMUIResponseVO smmuiResponseVO = new SMMUIResponseVO();
+    smmuiResponseVO.setBannerURL("https://banner");
+    controller.customerBO = mock(CustomerBO.class);
+    when(controller.customerBO.evaluateSMMBanner(anyString())).thenReturn(smmuiResponseVO);
+
+    // T&C
+    String tcJson = "{ \"terms\": [ [ { \"term-version\": \"v2\" } ] ] }";
+    when(session.getAttribute("tcJsonValue")).thenReturn(tcJson);
+
+    // Static mocks
+    mockStatic(UserAgentBean.class);
+    when(UserAgentBean.isMobile()).thenReturn(true);
+
+    // System params
+    setStaticField(SysParamConstant.class, "EBBP_PILOT_ENABLE", true);
+    setStaticField(SysParamConstant.class, "IAO_PILOT_ENABLE", true);
+    setStaticField(SysParamConstant.class, "ASIAMILES_ENABLE", true);
+
+    CustomerInfo customerInfo = mock(CustomerInfo.class);
+    when(customerInfo.getIsCustomerIdPilotWhiteListed()).thenReturn(true);
+    doReturn(customerInfo).when(controller).getCustomerInfo();
+    doReturn(true).when(controller).isCCRALCustomer();
+
+    // Run method
+    ModelAndView mav = controller.doViewLanding(request, response);
+
+    // Basic verification
+    assertNotNull(mav);
+    verify(session).setAttribute("isMobileAccess", "Y");
+    verify(session).setAttribute("isRALCCCustomer", "true");
+}
+
+private void setStaticField(Class<?> clazz, String fieldName, Object value) throws Exception {
+    Field field = clazz.getDeclaredField(fieldName);
+    field.setAccessible(true);
+    field.set(null, value);
+}
