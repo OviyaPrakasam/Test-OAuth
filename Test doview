@@ -1,4 +1,4 @@
-	public void doGetTCList(HttpServletRequest request, HttpServletResponse response) {
+w	public void doGetTCList(HttpServletRequest request, HttpServletResponse response) {
 		logger.debug("doGetTCList-tcJsonValue---"+request.getParameter(TC_JSON_VALUE));
 		logger.debug("doGetTCList-txnVersion --"+request.getParameter("tncVersion"));
 		if ((request.getParameter("tncVersion") != null || StringUtils.isNotBlank(request.getParameter(TC_JSON_VALUE))) && StringUtils.isBlank((String)request.getSession().getAttribute(TC_JSON_VALUE))) {
@@ -23,3 +23,30 @@
 		landingPageController.doGetTCList(requestMock, responseMock);
 		verify(httpSessionMock).setAttribute("tcJsonValue", CommonConstant.PAD_EMPTY);
 	}
+
+
+@Test
+public void doGetTCList_Should_SetSessionAttributes_When_ConditionTrue() throws Exception {
+    when(requestMock.getParameter("tncVersion")).thenReturn("1.0");
+    when(requestMock.getParameter("tcJsonValue")).thenReturn("sampleJson");
+    when(requestMock.getSession()).thenReturn(httpSessionMock);
+    when(httpSessionMock.getAttribute("tcJsonValue")).thenReturn(""); // blank in session
+
+    landingPageController.doGetTCList(requestMock, responseMock);
+
+    verify(httpSessionMock).setAttribute("tcJsonValue", "sampleJson");
+    verify(httpSessionMock).setAttribute("tcFlagEnable", CommonConstant.CONST_N);
+}
+
+@Test
+public void doGetTCList_Should_Not_SetSessionAttributes_When_ConditionFalse() throws Exception {
+    when(requestMock.getParameter("tncVersion")).thenReturn(null);
+    when(requestMock.getParameter("tcJsonValue")).thenReturn("   "); // blank
+    when(requestMock.getSession()).thenReturn(httpSessionMock);
+    when(httpSessionMock.getAttribute("tcJsonValue")).thenReturn("existingJson"); // not blank
+
+    landingPageController.doGetTCList(requestMock, responseMock);
+
+    verify(httpSessionMock, never()).setAttribute(eq("tcJsonValue"), any());
+    verify(httpSessionMock, never()).setAttribute(eq("tcFlagEnable"), any());
+}
