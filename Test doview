@@ -63,3 +63,54 @@ public void testDoBannerSSOAuth_invalidToken() {
     assertEquals("AuthenticationFailed", result);
 }
 
+@RunWith(MockitoJUnitRunner.class)
+public class YourControllerTest {
+
+    @InjectMocks
+    private YourController controller;
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @Mock
+    private HttpSession session;
+
+    @Mock
+    private CustomerBO customerBO;
+
+    @Mock
+    private PrintWriter writer;
+
+    @Test
+    public void testWithSMMJsonConfig() throws Exception {
+        SMMUIResponseVO smmuiResponseVO = mock(SMMUIResponseVO.class);
+        when(smmuiResponseVO.getCustRelId()).thenReturn("123");
+        when(smmuiResponseVO.getSmmRADataVO()).thenReturn(new Object());
+
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(smmuiResponseVO);
+        when(customerBO.generateSMMSSOCode(anyString(), any())).thenReturn("SSOCODE123");
+        when(response.getWriter()).thenReturn(writer);
+
+        controller.doBannerSSOAuth(request, response);
+
+        verify(writer).write("SSOCODE123");
+    }
+
+    @Test
+    public void testWithIcmProfileIdOnly() throws Exception {
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(null);
+        when(session.getAttribute("smmTempObj")).thenReturn(null);
+        when(session.getAttribute("icmProfileId")).thenReturn("ICM123");
+        when(customerBO.generateSMMSSOCode("ICM123")).thenReturn("SSOCODE999");
+        when(response.getWriter()).thenReturn(writer);
+
+        controller.doBannerSSOAuth(request, response);
+
+        verify(writer).write("SSOCODE999");
+    }
+}
