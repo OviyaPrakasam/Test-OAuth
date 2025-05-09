@@ -1,52 +1,42 @@
-w	public void doGetTCList(HttpServletRequest request, HttpServletResponse response) {
-		logger.debug("doGetTCList-tcJsonValue---"+request.getParameter(TC_JSON_VALUE));
-		logger.debug("doGetTCList-txnVersion --"+request.getParameter("tncVersion"));
-		if ((request.getParameter("tncVersion") != null || StringUtils.isNotBlank(request.getParameter(TC_JSON_VALUE))) && StringUtils.isBlank((String)request.getSession().getAttribute(TC_JSON_VALUE))) {
-			request.getSession().setAttribute(TC_JSON_VALUE, request.getParameter(TC_JSON_VALUE));
-			request.getSession().setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_N);
-			logger.debug("TermsCondition JSON value has been attached to session");
+public  ModelAndView doBannerSSOAuth(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		HttpSession session = request.getSession(false);
+		String ssoCode=null;
+
+		if(session != null && session.getAttribute(CONST_SMM_JSON_CONFIG) !=null){
+			SMMUIResponseVO smmuiResponseVO = (SMMUIResponseVO) session.getAttribute(CONST_SMM_JSON_CONFIG);
+			try {
+				logger.info("Customer "+smmuiResponseVO.getCustRelId()+" clicked on SMM Banner");
+				ssoCode = customerBO.generateSMMSSOCode(smmuiResponseVO.getCustRelId(),smmuiResponseVO.getSmmRADataVO());
+			}catch (Exception e) {
+				logger.error("SMM Banner Warning :Unable to fetch SMM Primary Banner CASAS SSO Code--"+e.getMessage());
+			}
+		}else if (session !=null && session.getAttribute("smmTempObj") !=null)  {
+			//These are fallback blocks in case if above session value is empty...Just observed sometimes above is null..
+			logger.error("SMM Banner :Inside main else session null");
+
+			SMMUIResponseVO smmuiResponseVO = (SMMUIResponseVO) session.getAttribute("smmTempObj");
+			logger.info("Customer "+smmuiResponseVO.getCustRelId()+" clicked on SMM Banner");
+			try {
+				ssoCode = customerBO.generateSMMSSOCode(smmuiResponseVO.getCustRelId(),smmuiResponseVO.getSmmRADataVO());
+			}catch (Exception e) {
+				logger.error("SMM Banner Warning :Unable to fetch SMM Primary Banner CASAS SSO Code--"+e.getMessage());
+			}
+		} else if(session != null &&  session.getAttribute("icmProfileId")!=null){
+			String icmProfileId=(String)session.getAttribute("icmProfileId");
+			try {
+				logger.info("Customer "+icmProfileId+" clicked on SMM Banner");
+				ssoCode = customerBO.generateSMMSSOCode(icmProfileId);
+			}catch (Exception e) {
+				logger.error("SMM Banner Warning :Unable to fetch SMM Primary Banner CASAS SSO Code--"+e.getMessage());
+			}
 		}
+		response.setContentType("application/json");
+		response.setCharacterEncoding("UTF-8");
+		if (StringUtils.isNotBlank(ssoCode)) {
+			response.getWriter().write(ssoCode);
+		}else {
+			logger.error("SMM Banner Warning:SSOCode value is empty or null");
+			response.getWriter().write("error");
+		}
+		return null;
 	}
-
-	@Test
-	public void doGetTCList_Test() throws Exception {
-		when(requestMock.getParameter("tcJsonValue")).thenReturn("tcJsonValue");
-		when(requestMock.getSession().getAttribute(any())).thenReturn("tcJsonValue");
-		landingPageController.doGetTCList(requestMock, responseMock);
-	}
-
-	@Test
-	public void doGetTcListEmpty_Test() throws Exception {
-		when(requestMock.getParameter("tcJsonValue")).thenReturn(" ");
-		when(requestMock.getSession().getAttribute(any())).thenReturn(httpSessionMock);
-		when(httpSessionMock.getAttribute(any())).thenReturn(CommonConstant.PAD_EMPTY);
-		landingPageController.doGetTCList(requestMock, responseMock);
-		verify(httpSessionMock).setAttribute("tcJsonValue", CommonConstant.PAD_EMPTY);
-	}
-
-
-@Test
-public void doGetTCList_Should_SetSessionAttributes_When_ConditionTrue() throws Exception {
-    when(requestMock.getParameter("tncVersion")).thenReturn("1.0");
-    when(requestMock.getParameter("tcJsonValue")).thenReturn("sampleJson");
-    when(requestMock.getSession()).thenReturn(httpSessionMock);
-    when(httpSessionMock.getAttribute("tcJsonValue")).thenReturn(""); // blank in session
-
-    landingPageController.doGetTCList(requestMock, responseMock);
-
-    verify(httpSessionMock).setAttribute("tcJsonValue", "sampleJson");
-    verify(httpSessionMock).setAttribute("tcFlagEnable", CommonConstant.CONST_N);
-}
-
-@Test
-public void doGetTCList_Should_Not_SetSessionAttributes_When_ConditionFalse() throws Exception {
-    when(requestMock.getParameter("tncVersion")).thenReturn(null);
-    when(requestMock.getParameter("tcJsonValue")).thenReturn("   "); // blank
-    when(requestMock.getSession()).thenReturn(httpSessionMock);
-    when(httpSessionMock.getAttribute("tcJsonValue")).thenReturn("existingJson"); // not blank
-
-    landingPageController.doGetTCList(requestMock, responseMock);
-
-    verify(httpSessionMock, never()).setAttribute(eq("tcJsonValue"), any());
-    verify(httpSessionMock, never()).setAttribute(eq("tcFlagEnable"), any());
-}
