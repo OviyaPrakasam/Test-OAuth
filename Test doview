@@ -40,3 +40,20 @@ public  ModelAndView doBannerSSOAuth(HttpServletRequest request, HttpServletResp
 		}
 		return null;
 	}
+
+
+
+
+
+@Test
+public void testDoBannerSSOAuth_validToken() {
+    String result = authService.doBannerSSOAuth("valid-token");
+    assertEquals("UserAuthenticated", result);
+}
+
+@Test
+public void testDoBannerSSOAuth_invalidToken() {
+    String result = authService.doBannerSSOAuth("invalid-token");
+    assertEquals("AuthenticationFailed", result);
+}
+
