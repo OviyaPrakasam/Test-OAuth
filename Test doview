@@ -114,3 +114,36 @@ public class YourControllerTest {
         verify(writer).write("SSOCODE999");
     }
 }
+
+
+@Test
+	public void testWithSMMJsonConfig() throws Exception {
+		SMMUIResponseVO smmuiResponseVO = mock(SMMUIResponseVO.class);
+		when(smmuiResponseVO.getCustRelId()).thenReturn("123");
+		when(smmuiResponseVO.getSmmRADataVO()).thenReturn(new SmmRADataVO());
+
+		when(requestMock.getSession(false)).thenReturn(httpSessionMock);
+		when(httpSessionMock.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(smmuiResponseVO);
+		when(customerBO.generateSMMSSOCode(anyString(), any())).thenReturn("SSOCODE123");
+
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter writer = new PrintWriter(stringWriter);
+		when(responseMock.getWriter()).thenReturn(writer);
+		landingPageController.doBannerSSOAuth(requestMock, responseMock);
+		//writer.flush();
+		assertEquals("SSOCODE123", stringWriter.toString());
+	}
+
+	@Test
+	public void testWithIcmProfileIdOnly() throws Exception {
+		when(requestMock.getSession(false)).thenReturn(httpSessionMock);
+		when(httpSessionMock.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(null);
+		when(httpSessionMock.getAttribute("smmTempObj")).thenReturn(null);
+		when(httpSessionMock.getAttribute("icmProfileId")).thenReturn("ICM123");
+		when(customerBO.generateSMMSSOCode("ICM123")).thenReturn("SSOCODE999");
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter writer = new PrintWriter(stringWriter);
+		when(responseMock.getWriter()).thenReturn(writer);
+		landingPageController.doBannerSSOAuth(requestMock, responseMock);
+		verify(writer).write("SSOCODE999");
+	}
