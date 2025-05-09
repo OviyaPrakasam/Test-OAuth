@@ -42,7 +42,13 @@ public  ModelAndView doBannerSSOAuth(HttpServletRequest request, HttpServletResp
 	}
 
 
-
+	@Test
+	public void doBannerSSOAuth() throws Exception {
+		when(httpSessionMock.getAttribute("icmProfileId")).thenReturn("223232323");
+		when(requestMock.getParameter("placement")).thenReturn("POST_LOGIN_SLOT");
+		when(customerBO.generateSMMSSOCode(anyString())).thenReturn("898989-89898-8998");
+		landingPageController.doBannerSSOAuth(requestMock, responseMock);
+	}
 
 
 @Test
