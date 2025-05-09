@@ -1,149 +1,120 @@
-public  ModelAndView doBannerSSOAuth(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		HttpSession session = request.getSession(false);
-		String ssoCode=null;
+//FXTD RTOB FLOW PILOT CHECK
 
-		if(session != null && session.getAttribute(CONST_SMM_JSON_CONFIG) !=null){
-			SMMUIResponseVO smmuiResponseVO = (SMMUIResponseVO) session.getAttribute(CONST_SMM_JSON_CONFIG);
-			try {
-				logger.info("Customer "+smmuiResponseVO.getCustRelId()+" clicked on SMM Banner");
-				ssoCode = customerBO.generateSMMSSOCode(smmuiResponseVO.getCustRelId(),smmuiResponseVO.getSmmRADataVO());
-			}catch (Exception e) {
-				logger.error("SMM Banner Warning :Unable to fetch SMM Primary Banner CASAS SSO Code--"+e.getMessage());
+			if(SysParamConstant.RTOB_FXTD_PILOT_ENABLE){
+				boolean result= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_AO_RTOB);
+				if(result){
+					session.setAttribute("isAOTDRTOBEnabled", Boolean.TRUE);
+				}else{
+					session.setAttribute("isAOTDRTOBEnabled", Boolean.FALSE);
+				}
+			}else{
+				session.setAttribute("isAOTDRTOBEnabled", Boolean.TRUE);
 			}
-		}else if (session !=null && session.getAttribute("smmTempObj") !=null)  {
-			//These are fallback blocks in case if above session value is empty...Just observed sometimes above is null..
-			logger.error("SMM Banner :Inside main else session null");
 
-			SMMUIResponseVO smmuiResponseVO = (SMMUIResponseVO) session.getAttribute("smmTempObj");
-			logger.info("Customer "+smmuiResponseVO.getCustRelId()+" clicked on SMM Banner");
-			try {
-				ssoCode = customerBO.generateSMMSSOCode(smmuiResponseVO.getCustRelId(),smmuiResponseVO.getSmmRADataVO());
-			}catch (Exception e) {
-				logger.error("SMM Banner Warning :Unable to fetch SMM Primary Banner CASAS SSO Code--"+e.getMessage());
+
+
+//	CSD-DAC-CS2I - START
+
+			if(SysParamConstant.IS_CSD_DAC_CS2I_ENABLE){
+				if (SysParamConstant.IS_CSD_DAC_CS2I_PILOT_ENABLE) {
+					boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_CSD_DAC_CS2I);
+					if(isWhiteListed){
+						session.setAttribute("isDACCS2IEnable", "true");
+					}else{
+						session.setAttribute("isDACCS2IEnable", "false");
+					}
+				} else {
+					session.setAttribute("isDACCS2IEnable", "true");
+				}
+			}else{
+				session.setAttribute("isDACCS2IEnable", "false");
 			}
-		} else if(session != null &&  session.getAttribute("icmProfileId")!=null){
-			String icmProfileId=(String)session.getAttribute("icmProfileId");
-			try {
-				logger.info("Customer "+icmProfileId+" clicked on SMM Banner");
-				ssoCode = customerBO.generateSMMSSOCode(icmProfileId);
-			}catch (Exception e) {
-				logger.error("SMM Banner Warning :Unable to fetch SMM Primary Banner CASAS SSO Code--"+e.getMessage());
+			
+
+//PILOT FLAG - CCLI
+			if ((SysParamConstant.IS_CCLI_ENABLE).equalsIgnoreCase(CommonConstant.PILOT_ENABLE) ){
+
+				if ((SysParamConstant.IS_CCLI_PILOT_ENABLE)
+						.equalsIgnoreCase(CommonConstant.PILOT_ENABLE)) {
+					if (getSecurityService().isWhiteListUser(
+							customerVO.getUserId(),
+							customerVO.getCustomerEBID(),
+							CommonConstant.PILOT_FUNCD_CCLI)) {
+						session.setAttribute("isCcliPilotEnable", Boolean.TRUE);
+					} else {
+						session.setAttribute("isCcliPilotEnable", Boolean.FALSE);
+
+					}
+				} else {
+					session.setAttribute("isCcliPilotEnable", Boolean.TRUE);
+
+				}
+			}else{
+				session.setAttribute("isCcliPilotEnable", Boolean.FALSE);
+
 			}
-		}
-		response.setContentType("application/json");
-		response.setCharacterEncoding("UTF-8");
-		if (StringUtils.isNotBlank(ssoCode)) {
-			response.getWriter().write(ssoCode);
-		}else {
-			logger.error("SMM Banner Warning:SSOCode value is empty or null");
-			response.getWriter().write("error");
-		}
-		return null;
-	}
+			
+			//PLTU-CCLI-END
+			if(SysParamConstant.DATA_LOCKER_PILOT_ENABLE){
+				boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_DATALOCKER);
+				if(isWhiteListed){
+					session.setAttribute("isDataLockerEnabled", "Y");
+				}else{
+					session.setAttribute("isDataLockerEnabled", "N");
+				}
+			}else{
+				session.setAttribute("isDataLockerEnabled", "Y");
+			}
+
+try{
+				// CHECKING WHETHER C2C FUNCTION IS ENABLED
+				if(SysParamConstant.CBC2C_FUNC_ENABLE){
+					String customerLanguage = CommonUtils.getContextLanguage();
+					// GETTING LANG CONFIG
+					boolean isCBC2CLangEnabled = false;
+					if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_EN)) {
+						isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_EN;
+					} else if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_SIMPLIFIED_CHINESE)) {
+						isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_ZH_CN;
+					} else if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_TRADITIONAL_CHINESE)) {
+						isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_ZH_HK;
+					}
+					logger.info("CBC2C Stacy Enabled for Language "+customerLanguage+"?: "+isCBC2CLangEnabled);
+
+					// ENABLE C2C / BOT ONLY IF LANG CONFIG IS ENABLED
+					if(isCBC2CLangEnabled){
+						// PILOT CHECKING FOR CBC2C
+						if(SysParamConstant.CBC2C_PILOT_ENABLE){
+							boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_CLICK2CHAT);
+
+							// ONLY FOR WHITELISTED CUSTOMER, SETTING isC2CFloaterEnable VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
+							if(isWhiteListed){
+								isC2CFloaterEnable = true;
+								c2cCustomerSegment = CommonConstant.STACY_CONFIG_BOT;
+								logger.info("CBC2C Stacy Enabled for "+customerVO.getUserId());
+								boolean c2cSkipLBUnreadCall = SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP;
+								session.setAttribute("c2cUnreadCallSkip", c2cSkipLBUnreadCall);
+							}
+						} else {
+							// IF CBC2C FUNCTION ENABLED BUT PILOT FLAG IS DISABLED, SETTING isC2CFloaterEnable VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
+							isC2CFloaterEnable = true;
+							c2cCustomerSegment = CommonConstant.STACY_CONFIG_BOT;
+							logger.info("CBC2C Stacy Enabled for "+customerVO.getUserId());
+							boolean c2cSkipLBUnreadCall = SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP;
+							session.setAttribute("c2cUnreadCallSkip", c2cSkipLBUnreadCall);
+						}
+					}
+				}
+			} catch(Exception exception){
+				logger.error("Exception in Setting CBC2C Info: "+exception.getMessage());
+			} finally{
+				session.setAttribute("isC2CFloaterEnable", Boolean.valueOf(isC2CFloaterEnable));
+				session.setAttribute("c2cCustomerSegment", c2cCustomerSegment);
+				session.setAttribute("c2cLoginFlag", Boolean.TRUE);
+			}
 
 
-	@Test
-	public void doBannerSSOAuth() throws Exception {
-		when(httpSessionMock.getAttribute("icmProfileId")).thenReturn("223232323");
-		when(requestMock.getParameter("placement")).thenReturn("POST_LOGIN_SLOT");
-		when(customerBO.generateSMMSSOCode(anyString())).thenReturn("898989-89898-8998");
-		landingPageController.doBannerSSOAuth(requestMock, responseMock);
-	}
 
-
-@Test
-public void testDoBannerSSOAuth_validToken() {
-    String result = authService.doBannerSSOAuth("valid-token");
-    assertEquals("UserAuthenticated", result);
-}
-
-@Test
-public void testDoBannerSSOAuth_invalidToken() {
-    String result = authService.doBannerSSOAuth("invalid-token");
-    assertEquals("AuthenticationFailed", result);
-}
-
-@RunWith(MockitoJUnitRunner.class)
-public class YourControllerTest {
-
-    @InjectMocks
-    private YourController controller;
-
-    @Mock
-    private HttpServletRequest request;
-
-    @Mock
-    private HttpServletResponse response;
-
-    @Mock
-    private HttpSession session;
-
-    @Mock
-    private CustomerBO customerBO;
-
-    @Mock
-    private PrintWriter writer;
-
-    @Test
-    public void testWithSMMJsonConfig() throws Exception {
-        SMMUIResponseVO smmuiResponseVO = mock(SMMUIResponseVO.class);
-        when(smmuiResponseVO.getCustRelId()).thenReturn("123");
-        when(smmuiResponseVO.getSmmRADataVO()).thenReturn(new Object());
-
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(smmuiResponseVO);
-        when(customerBO.generateSMMSSOCode(anyString(), any())).thenReturn("SSOCODE123");
-        when(response.getWriter()).thenReturn(writer);
-
-        controller.doBannerSSOAuth(request, response);
-
-        verify(writer).write("SSOCODE123");
-    }
-
-    @Test
-    public void testWithIcmProfileIdOnly() throws Exception {
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(null);
-        when(session.getAttribute("smmTempObj")).thenReturn(null);
-        when(session.getAttribute("icmProfileId")).thenReturn("ICM123");
-        when(customerBO.generateSMMSSOCode("ICM123")).thenReturn("SSOCODE999");
-        when(response.getWriter()).thenReturn(writer);
-
-        controller.doBannerSSOAuth(request, response);
-
-        verify(writer).write("SSOCODE999");
-    }
-}
-
-
-@Test
-	public void testWithSMMJsonConfig() throws Exception {
-		SMMUIResponseVO smmuiResponseVO = mock(SMMUIResponseVO.class);
-		when(smmuiResponseVO.getCustRelId()).thenReturn("123");
-		when(smmuiResponseVO.getSmmRADataVO()).thenReturn(new SmmRADataVO());
-
-		when(requestMock.getSession(false)).thenReturn(httpSessionMock);
-		when(httpSessionMock.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(smmuiResponseVO);
-		when(customerBO.generateSMMSSOCode(anyString(), any())).thenReturn("SSOCODE123");
-
-		StringWriter stringWriter = new StringWriter();
-		PrintWriter writer = new PrintWriter(stringWriter);
-		when(responseMock.getWriter()).thenReturn(writer);
-		landingPageController.doBannerSSOAuth(requestMock, responseMock);
-		//writer.flush();
-		assertEquals("SSOCODE123", stringWriter.toString());
-	}
-
-	@Test
-	public void testWithIcmProfileIdOnly() throws Exception {
-		when(requestMock.getSession(false)).thenReturn(httpSessionMock);
-		when(httpSessionMock.getAttribute("CONST_SMM_JSON_CONFIG")).thenReturn(null);
-		when(httpSessionMock.getAttribute("smmTempObj")).thenReturn(null);
-		when(httpSessionMock.getAttribute("icmProfileId")).thenReturn("ICM123");
-		when(customerBO.generateSMMSSOCode("ICM123")).thenReturn("SSOCODE999");
-		StringWriter stringWriter = new StringWriter();
-		PrintWriter writer = new PrintWriter(stringWriter);
-		when(responseMock.getWriter()).thenReturn(writer);
-		landingPageController.doBannerSSOAuth(requestMock, responseMock);
-		verify(writer).write("SSOCODE999");
-	}
+4 Different if clauses are required test coverage all are part of method 
+public ModelAndView doViewLanding(HttpServletRequest request, HttpServletResponse response) throws Exception required testcoverage
+		
