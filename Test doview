@@ -1,120 +1,814 @@
-//FXTD RTOB FLOW PILOT CHECK
+package com.scb.bsoi.security.endpoint.impl;
 
-			if(SysParamConstant.RTOB_FXTD_PILOT_ENABLE){
-				boolean result= getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_AO_RTOB);
-				if(result){
-					session.setAttribute("isAOTDRTOBEnabled", Boolean.TRUE);
-				}else{
-					session.setAttribute("isAOTDRTOBEnabled", Boolean.FALSE);
-				}
-			}else{
-				session.setAttribute("isAOTDRTOBEnabled", Boolean.TRUE);
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import com.scb.bsoi.accounts.endpoint.request.FpsRegistrationRequest;
+import com.scb.bsoi.accounts.vo.ActivationCodeVO.Action;
+import com.scb.bsoi.base.endpoint.BaseBSOIServiceEndpoint;
+import com.scb.bsoi.base.endpoint.request.BaseBSOIRequest;
+import com.scb.bsoi.base.endpoint.response.BaseBSOIResponse;
+import com.scb.bsoi.base.vo.FunctionContext;
+import com.scb.bsoi.common.exception.BSOIException;
+import com.scb.bsoi.context.BSOIContext;
+import com.scb.bsoi.security.delegate.SecurityDelegate;
+import com.scb.bsoi.security.endpoint.SecurityEndpoint;
+import com.scb.bsoi.security.endpoint.request.*;
+import com.scb.bsoi.security.endpoint.response.*;
+import com.scb.bsoi.security.vo.*;
+import com.scb.bsoi.utils.BSOIUtils;
+import org.apache.commons.lang3.StringUtils;
+
+@Path("/security")
+public class SecurityEndpointImpl extends BaseBSOIServiceEndpoint implements
+		SecurityEndpoint {
+	private SecurityDelegate securityDelegate;
+
+	public void setSecurityDelegate(SecurityDelegate securityDelegate) {
+		this.securityDelegate = securityDelegate;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/login")
+	public LoginResponse login(LoginRequest request) {
+		LoginResponse response = new LoginResponse();
+		LoginVO loginVO = null;
+		try {
+			getValidator(LoginRequest.class).validate(request);
+			FunctionContext functionContext = request.getRequestHeader().getFunctionContext();
+			if(functionContext != null){
+				BSOIContext.setEnabledFunctions(functionContext.getEnabledFunctions());
 			}
+			loginVO = securityDelegate.login(this.getHttpServletRequest(), this.getHttpServletResponse(), 
+					request.getLoginRequest());
+			response.setLogin(loginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
 
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/logout")
+	public LogoutResponse logout(LogoutRequest request) {
+		LogoutResponse response = new LogoutResponse();
+		EventLogSummaryVO eventLogSummaryVO = null;
+		try {
+			getValidator(LogoutRequest.class).validate(request);
+			eventLogSummaryVO = this.securityDelegate.logout(this
+					.getHttpServletRequest());
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		response.setEventLogSummary(eventLogSummaryVO);
+		return response;
+	}
 
+	@POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/checkSession")
+    public BaseBSOIResponse checkSession(BaseBSOIRequest request) {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.checkSession();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+    }
 
-//	CSD-DAC-CS2I - START
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/resendOTP")
+	public BaseBSOIResponse resendOTP(BaseBSOIRequest request)
+			throws BSOIException {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.resendOTP();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
 
-			if(SysParamConstant.IS_CSD_DAC_CS2I_ENABLE){
-				if (SysParamConstant.IS_CSD_DAC_CS2I_PILOT_ENABLE) {
-					boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_CSD_DAC_CS2I);
-					if(isWhiteListed){
-						session.setAttribute("isDACCS2IEnable", "true");
-					}else{
-						session.setAttribute("isDACCS2IEnable", "false");
-					}
-				} else {
-					session.setAttribute("isDACCS2IEnable", "true");
-				}
-			}else{
-				session.setAttribute("isDACCS2IEnable", "false");
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/renewOTP")
+	public BaseBSOIResponse renewOTP(BaseBSOIRequest request)
+			throws BSOIException {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.renewOTP();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}	
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/scpayRenewOTP")
+	public BaseBSOIResponse scpayRenewOTP(BaseBSOIRequest request)
+			throws BSOIException {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			/*
+			 * renewOTP did not receive any parameters,just get paras from security cache
+			 * because of the AOP,just call delegate need two params
+			 * the reason why two paras -- when run paramProceedingJoinPoint.proceed(args);
+			 * it will send the args(has two paras),if not set function which has two params will hit errors.
+			 * */
+			Object first_param = new Object();
+			Object second_param = new Object();
+			securityDelegate.renewOTP(first_param,second_param);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/fpsRenewOTP")	
+	public BaseBSOIResponse fpsRenewOTP(BaseBSOIRequest request)
+			throws BSOIException {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			Object param = new Object();
+			securityDelegate.renewOTP(param);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/initLogin")
+	public InitLoginResponse initLogin(BaseBSOIRequest request) {
+		InitLoginResponse response = new InitLoginResponse();
+		try {
+			response.setInitLogin(securityDelegate.initLogin(this.getHttpServletRequest()));
+        } catch (Exception e) {
+            handleException(request, response, e);
+        }
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/preLogin/configure")
+	public PreLoginConfigureResponse preLoginConfigure(
+			PreLoginConfigureRequest request) {
+		PreLoginConfigureResponse response = new PreLoginConfigureResponse();
+		PreLoginVO preLoginVO = null;
+		try {
+			getValidator(PreLoginConfigureRequest.class).validate(request);
+			preLoginVO = securityDelegate.preLoginConfigure(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getPreLogin());
+			response.setPreLogin(preLoginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/preLogin/status")
+	public PreLoginStatusResponse preLoginStatus(PreLoginStatusRequest request) {
+		PreLoginStatusResponse response = new PreLoginStatusResponse();
+		PreLoginVO preLoginVO = null;
+		try {
+			getValidator(PreLoginStatusRequest.class).validate(request);
+			preLoginVO = securityDelegate.preLoginStatus(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getPreLogin());
+			response.setPreLogin(preLoginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/preLogin/disable")
+	public PreLoginDisableResponse preLoginDisable(
+			PreLoginDisableRequest request) {
+		PreLoginDisableResponse response = new PreLoginDisableResponse();
+		PreLoginVO preLoginVO = null;
+		try {
+			getValidator(PreLoginDisableRequest.class).validate(request);
+			preLoginVO = securityDelegate.preLoginDisable(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getPreLogin());
+			response.setPreLogin(preLoginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/postLogin/disable")
+	public PreLoginDisableResponse postLoginDisable(
+			PreLoginDisableRequest request) {
+		PreLoginDisableResponse response = new PreLoginDisableResponse();
+		PreLoginVO preLoginVO = null;
+		try {
+			getValidator(PreLoginDisableRequest.class).validate(request);
+			preLoginVO = securityDelegate.preLoginDisable(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getPreLogin());
+			response.setPreLogin(preLoginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/postLogin/reset")
+	public BaseBSOIResponse postLoginReset(PostLoginResetRequest request) {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			getValidator(PostLoginResetRequest.class).validate(request);
+			securityDelegate.postLoginReset(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getPreLogin());
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/postLogin/status")
+	public PostLoginStatusResponse postLoginStatus(PostLoginStatusRequest request) {
+		PostLoginStatusResponse response = new PostLoginStatusResponse();
+		PreLoginVO preLoginVO = null;
+		try {
+			getValidator(PostLoginStatusRequest.class).validate(request);
+			preLoginVO = securityDelegate.postLoginStatus(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getPreLogin());
+			response.setPreLogin(preLoginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/sso/getToken")
+	public SsoTokenResponse getSsoToken(SsoTokenRequest request) {
+		SsoTokenResponse response = new SsoTokenResponse();
+		SsoTokenVO ssoToken = null;
+		try{
+			//for softtoken
+			BSOIUtils.setTSPBSOIContext(request, this.getHttpServletRequest());
+			ssoToken = securityDelegate.getSsoToken(this.getHttpServletRequest(), this.getHttpServletResponse(), request.getTarget());
+			response.setSsoToken(ssoToken);
+		} catch (Exception e){
+			handleException(request, response, e);
+		}
+		return response;
+	}	
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/cryptoService")
+	public CryptoServiceResponse cryptoService(CryptoServiceRequest request)  {
+		CryptoServiceResponse response = new CryptoServiceResponse();
+		CryptoServiceVO cryptoServiceVO = null;
+		try {
+			cryptoServiceVO = securityDelegate.cryptoService(request.getCryptoServiceRequest());
+			if(null != cryptoServiceVO){
+				response.setActivationData(cryptoServiceVO.getActivationData());
+				response.setEncryptedPassData(cryptoServiceVO.getEncryptedPassData());
+				response.setEphemeralPublicKey(cryptoServiceVO.getEphemeralPublicKey());
 			}
-			
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/updateInAppProvisionStatus")
+	public UpdateInAppProvisionStatusResponse updateInAppProvisionStatus(UpdateInAppProvisionStatusRequest request)  {
+		UpdateInAppProvisionStatusResponse response = new UpdateInAppProvisionStatusResponse();
+		try {
+         securityDelegate.updateInAppProvisionStatus(request.getUpdateInAppProvisionStatusRequest());
+         response.setResult("true");
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/validate2FAToken")
+	public Validate2FAResponse validate2FAToken(Validate2FARequest request) {
+		Validate2FAResponse response = new Validate2FAResponse();
+		try {
+			getValidator(Validate2FARequest.class).validate(request);
+			securityDelegate.validate2FAToken(request.getValidate2FARequest());
+        } catch (Exception e) {
+            handleException(request, response, e);
+        }
+		return response;
+	}
+    
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/validate2FATokenWithSAS2")
+	public Validate2FAResponse validate2FATokenWithSAS2(Validate2FARequest request) {
+		Validate2FAResponse response = new Validate2FAResponse();
+		try {
+			getValidator(Validate2FARequest.class).validate(request);
+			securityDelegate.validate2FATokenWithSAS2(request.getValidate2FARequest().getOtpToken());
+        } catch (Exception e) {
+            handleException(request, response, e);
+        }
+        
+        response = this.getFilter(Validate2FAResponse.class).filter(request,
+				response);
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/resendOTPWithSAS2")
+	public BaseBSOIResponse resendOTPWithSAS2(BaseBSOIRequest request) {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.resendOTPWithSAS2();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
 
-//PILOT FLAG - CCLI
-			if ((SysParamConstant.IS_CCLI_ENABLE).equalsIgnoreCase(CommonConstant.PILOT_ENABLE) ){
+	}
 
-				if ((SysParamConstant.IS_CCLI_PILOT_ENABLE)
-						.equalsIgnoreCase(CommonConstant.PILOT_ENABLE)) {
-					if (getSecurityService().isWhiteListUser(
-							customerVO.getUserId(),
-							customerVO.getCustomerEBID(),
-							CommonConstant.PILOT_FUNCD_CCLI)) {
-						session.setAttribute("isCcliPilotEnable", Boolean.TRUE);
-					} else {
-						session.setAttribute("isCcliPilotEnable", Boolean.FALSE);
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/inapp/configEnable")
+	public INAPPConfigEnableResponse enableINAPPConfig(
+			INAPPConfigEnableRequest request) {
+		INAPPConfigEnableResponse response = new INAPPConfigEnableResponse();
+		INAPPConfigVO inAppConfigVO = null;
+		try {
+			inAppConfigVO = securityDelegate.enableINAPPConfig(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getInAPPConfigVO());
+			response.setInAPPConfigVO(inAppConfigVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
 
-					}
-				} else {
-					session.setAttribute("isCcliPilotEnable", Boolean.TRUE);
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/inapp/configDisable")
+	public INAPPConfigDisableResponse disableINAPPConfig(
+			INAPPConfigDisableRequest request) {
+		INAPPConfigDisableResponse response = new INAPPConfigDisableResponse();
+		INAPPConfigVO inAppConfigVO = null;
+		try {
+			inAppConfigVO = securityDelegate.disableINAPPConfig(
+					this.getHttpServletRequest(),
+					this.getHttpServletResponse(), request.getInAPPConfigVO());
+			response.setInAPPConfigVO(inAppConfigVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
 
-				}
-			}else{
-				session.setAttribute("isCcliPilotEnable", Boolean.FALSE);
-
-			}
-			
-			//PLTU-CCLI-END
-			if(SysParamConstant.DATA_LOCKER_PILOT_ENABLE){
-				boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), CommonConstant.PILOT_FUNCD_DATALOCKER);
-				if(isWhiteListed){
-					session.setAttribute("isDataLockerEnabled", "Y");
-				}else{
-					session.setAttribute("isDataLockerEnabled", "N");
-				}
-			}else{
-				session.setAttribute("isDataLockerEnabled", "Y");
-			}
-
-try{
-				// CHECKING WHETHER C2C FUNCTION IS ENABLED
-				if(SysParamConstant.CBC2C_FUNC_ENABLE){
-					String customerLanguage = CommonUtils.getContextLanguage();
-					// GETTING LANG CONFIG
-					boolean isCBC2CLangEnabled = false;
-					if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_EN)) {
-						isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_EN;
-					} else if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_SIMPLIFIED_CHINESE)) {
-						isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_ZH_CN;
-					} else if (customerLanguage.equalsIgnoreCase(CommonConstant.LANG_TRADITIONAL_CHINESE)) {
-						isCBC2CLangEnabled = SysParamConstant.CBC2C_ENBL_FLAG_ZH_HK;
-					}
-					logger.info("CBC2C Stacy Enabled for Language "+customerLanguage+"?: "+isCBC2CLangEnabled);
-
-					// ENABLE C2C / BOT ONLY IF LANG CONFIG IS ENABLED
-					if(isCBC2CLangEnabled){
-						// PILOT CHECKING FOR CBC2C
-						if(SysParamConstant.CBC2C_PILOT_ENABLE){
-							boolean isWhiteListed = getSecurityService().isWhiteListUser(customerVO.getUserId(), customerVO.getCustomerEBID(), SysParamConstant.CAT_CLICK2CHAT);
-
-							// ONLY FOR WHITELISTED CUSTOMER, SETTING isC2CFloaterEnable VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
-							if(isWhiteListed){
-								isC2CFloaterEnable = true;
-								c2cCustomerSegment = CommonConstant.STACY_CONFIG_BOT;
-								logger.info("CBC2C Stacy Enabled for "+customerVO.getUserId());
-								boolean c2cSkipLBUnreadCall = SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP;
-								session.setAttribute("c2cUnreadCallSkip", c2cSkipLBUnreadCall);
-							}
-						} else {
-							// IF CBC2C FUNCTION ENABLED BUT PILOT FLAG IS DISABLED, SETTING isC2CFloaterEnable VALUE TO TRUE. ELSE, DEFAULT VALUE(false) WILL BE AVAILABLE
-							isC2CFloaterEnable = true;
-							c2cCustomerSegment = CommonConstant.STACY_CONFIG_BOT;
-							logger.info("CBC2C Stacy Enabled for "+customerVO.getUserId());
-							boolean c2cSkipLBUnreadCall = SysParamConstant.IS_CLICK2CHAT_UNREAD_SKIP;
-							session.setAttribute("c2cUnreadCallSkip", c2cSkipLBUnreadCall);
-						}
-					}
-				}
-			} catch(Exception exception){
-				logger.error("Exception in Setting CBC2C Info: "+exception.getMessage());
-			} finally{
-				session.setAttribute("isC2CFloaterEnable", Boolean.valueOf(isC2CFloaterEnable));
-				session.setAttribute("c2cCustomerSegment", c2cCustomerSegment);
-				session.setAttribute("c2cLoginFlag", Boolean.TRUE);
-			}
-
-
-
-4 Different if clauses are required test coverage all are part of method 
-public ModelAndView doViewLanding(HttpServletRequest request, HttpServletResponse response) throws Exception required testcoverage
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/inapp/configStatus")
+	public INAPPConfigStatusResponse checkINAPPConfigStatus(
+			INAPPConfigStatusRequest request) {
+		INAPPConfigStatusResponse response = new INAPPConfigStatusResponse();
+		INAPPConfigVO inAppConfigVO = null;
+		try {
+			inAppConfigVO = securityDelegate.checkINAPPConfigStatus(request.getInAPPConfigVO());
+			response.setInAPPConfigVO(inAppConfigVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
 		
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/scpayResendOTP")
+	public BaseBSOIResponse scpayResendOTP(BaseBSOIRequest request) throws BSOIException {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.scpayResendOTP();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/postLogin/generateOTP2FA")
+	public BaseBSOIResponse postLoginGenerateOTP2FA(OTPRequest request)  {
+		OTPResponse response = new OTPResponse();
+		boolean isPreLogin = false;
+		try {
+		 getValidator(OTPRequest.class).validate(request);
+		 String functionCode = request.getPreLogin().getFunctionCode();
+         securityDelegate.generateOTP2FA(request,functionCode,isPreLogin);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/preLogin/generateOTP2FA")
+	public BaseBSOIResponse preLoginGenerateOTP2FA(OTPRequest request)  {
+		OTPResponse response = new OTPResponse();
+		boolean isPreLogin = true;
+		try {
+		 getValidator(OTPRequest.class).validate(request);
+		 String functionCode = request.getPreLogin().getFunctionCode();
+         securityDelegate.generateOTP2FA(request,functionCode,isPreLogin);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/genUniqueSessionId")
+	public ThreatMetrixResponse genUniqueSessionId(BaseBSOIRequest request) {
+		ThreatMetrixResponse response = new ThreatMetrixResponse();
+		try {
+			String uniqueSessionId = securityDelegate.genUniqueSessionId(request.getRequestHeader().getTmxContext().getThreatMetrixVO());
+			response.setUniqueSessionId(uniqueSessionId);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/check/tmx")
+	public ThreatMetrixResponse checkTMXResult(BaseBSOIRequest request) {
+		ThreatMetrixResponse response = new ThreatMetrixResponse();
+		try {
+			response = securityDelegate.checkTMXResult(request.getRequestHeader().getTmxContext().getThreatMetrixVO());
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/validateOTP")
+	public BaseBSOIResponse validateOTP(BaseBSOIRequest request) {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.validateOTP();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/tmxResendOTP")
+	public BaseBSOIResponse tmxResendOTP(BaseBSOIRequest request) throws BSOIException {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.tmxResendOTP();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/changeE2EPassword")
+	public UpdateUserPassResponse changeE2Epassword(UpdateUserPassRequest request){
+	    UpdateUserPassResponse response = new UpdateUserPassResponse ();
+		try{
+		    this.getValidator(UpdateUserPassRequest.class).validate(request);
+		    PreLoginVO preLogin = securityDelegate.changeE2Epassword(request.getPasswordVO(),this.getHttpServletRequest());
+		    response.setPreLogin(preLogin);
+		}catch(Exception e){
+			handleException(request,response,e);
+		}
+		return response;
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/fps/registration/activation/validation")
+    public BaseBSOIResponse vaidateFpsRegistrationActivationOTP(BaseBSOIRequest request) throws BSOIException
+    {
+    	BaseBSOIResponse response = new BaseBSOIResponse();
+    	
+    	try 
+    	{
+    		//for Create and Validate OTP for FPS
+    		securityDelegate.vaidateFpsRegistrationActivationOTP();
+        } 
+    	catch (Exception e) 
+    	{
+    		 handleException(request, response, e);
+        }
+        return response;
+    }
+    
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/fps/setting/activation/validation")
+    public BaseBSOIResponse vaidateFpsSettingActivationOTP(BaseBSOIRequest request){
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.vaidateFpsSettingActivationOTP();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/fps/setting/activation/generate")
+	public BaseBSOIResponse generateFpsSettingActivationOTP(FpsRegistrationRequest request){
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.generateFpsSettingActivationOTP(request.getFpsRegistrationVO(), Action.GENERATE);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+    
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/fps/setting/activation/renew")
+	public BaseBSOIResponse renewFpsSettingActivationOTP(FpsRegistrationRequest request)
+    {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try 
+		{
+			securityDelegate.generateFpsSettingActivationOTP(request.getFpsRegistrationVO(), Action.RENEW);
+		} 
+		catch (Exception e)
+		{
+			handleException(request, response, e);
+		}
+		return response;
+	}    
+    
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/fps/registration/activation/generate")
+	public BaseBSOIResponse generateFpsRegistrationActivationOTP(BaseBSOIRequest request)
+    {
+		//renew activation code for registration 
+    	BaseBSOIResponse response = new BaseBSOIResponse();
+		try 
+		{
+			securityDelegate.generateFpsRegistrationActivationOTP();
+		} 
+		catch (Exception e) 
+		{
+			handleException(request, response, e);
+		}
+		return response;
+	}    
+    
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/changeSFCAckDate")
+	public BaseBSOIResponse addSFCAckDate(BaseBSOIRequest request) {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			securityDelegate.changeSFCAckDate();
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+    
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/clickToChat")
+	public SsoTokenResponse clickToChat(SsoTokenRequest request) {
+		SsoTokenResponse response = new SsoTokenResponse();
+		SsoTokenVO ssoToken = null;
+		try{
+			ssoToken = securityDelegate.clickToChat(this.getHttpServletRequest(), request.getTarget());
+			response.setSsoToken(ssoToken);
+		} catch (Exception e){
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/getOauth2TransferToken")
+	public SsoTokenResponse getOauth2TransferToken(SsoTokenRequest request) {
+		SsoTokenResponse response = new SsoTokenResponse();
+		SsoTokenVO ssoToken = null;
+		try{
+			ssoToken = securityDelegate.getOauth2TransferToken(this.getHttpServletRequest(), request.getTarget());
+			response.setSsoToken(ssoToken);
+		} catch (Exception e){
+			handleException(request, response, e);
+		}
+		return response;
+	}
+    
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/checkSoloCardOrEmail")
+	public PopupLoginCheckResponse checkSoloCardOrEmail(BaseBSOIRequest request) {
+    	PopupLoginCheckResponse response = new PopupLoginCheckResponse();
+		try {
+			PopupVO popupVO = securityDelegate.checkSoloCardOrEmail();
+			response.setPopupVO(popupVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}      
+    
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/updateEmailOrEstmt")
+	public EmailUpdateResponse updateEmailOrEstmt(UpdateEmailOrEstmtRequest request) {
+    	EmailUpdateResponse response = new EmailUpdateResponse();
+		try {
+			getValidator(UpdateEmailOrEstmtRequest.class).validate(request);
+			//for softtoken
+			BSOIUtils.setTSPBSOIContext(request, this.getHttpServletRequest());
+			EmailUpdateVO emailUpdateVO = securityDelegate.updateEmailOrEstmt(request.getEmailOrEstmtUpdateVO());
+			response.setEmailUpdateVO(emailUpdateVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+    
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/checkEmailUpdate")
+	public EmailUpdateCheckResponse checkEmailUpdate(BaseBSOIRequest request) {
+    	EmailUpdateCheckResponse response = new EmailUpdateCheckResponse();
+		try {
+			Boolean emailUpdateFlag = securityDelegate.checkEmailUpdate();
+			response.setEmailUpdateFlag(emailUpdateFlag);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+    
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/casaAccountSetup")
+	public CasaAccountSetupResponse casaAccountSetup(BaseBSOIRequest request) {
+    	CasaAccountSetupResponse response = new CasaAccountSetupResponse();
+    	try {
+    		CasaAccountSetupVO casaAccountSetupVO = securityDelegate.casaAccountSetup();
+    		response.setCasaAccountSetupVO(casaAccountSetupVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/emailOtp")
+	public EmailOtpResponse emailOtp(BaseBSOIRequest request) {
+		EmailOtpResponse response = new EmailOtpResponse();
+		try {
+			EmailOTPVO emailOTPVO = securityDelegate.emailOtpGenerateOrValidate();
+			if(emailOTPVO!=null) {
+				if(StringUtils.isNotEmpty(emailOTPVO.getEmailAddress())) {
+					response.setEmailAddress(emailOTPVO.getEmailAddress());
+					response.setIsOTPRequired(BSOIContext.getIsOTPRequired());
+				}
+				if(null != request.getRequestHeader().getServiceContext()
+						&& StringUtils.isNotEmpty(request.getRequestHeader().getServiceContext().getOtpToken())) {
+					response.setAccessToken(emailOTPVO.getAccessToken());
+				}
+			}
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/updateBannerPopup")
+	public BaseBSOIResponse updateBannerPopup(BannerPopupUpdateRequest request) {
+		BaseBSOIResponse response = new BaseBSOIResponse();
+		try {
+			getValidator(BannerPopupUpdateRequest.class).validate(request);
+			securityDelegate.updateBannerPopup(request);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/authLogin")
+	@Override
+	public LoginResponse authLogin(BaseBSOIRequest request) {
+		LoginResponse response = new LoginResponse();
+		LoginVO loginVO = null;
+		try {
+			loginVO = securityDelegate.authLogin(this.getHttpServletRequest(), this.getHttpServletResponse());
+			response.setLogin(loginVO);
+		} catch (Exception e) {
+			handleException(request, response, e);
+		}
+		return response;
+	}
+}
