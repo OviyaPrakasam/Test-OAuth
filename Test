@@ -1,262 +1,252 @@
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
-import org.mockito.junit.jupiter.MockitoExtension;
+LandingPageController
 
-import java.lang.reflect.Method;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
-class YourClassTest {
-
-    @InjectMocks
-    private YourClass yourClass;
-
-    @Mock
-    private CardBO cardBO;
-
-    @Mock
-    private CustomerBO customerBO;
-
-    @Mock
-    private Logger logger;
-
-    private CustomerVO customerVO;
-
-    @BeforeEach
-    void setUp() {
-        customerVO = new CustomerVO();
-        customerVO.setUserId("user123");
-    }
-
-    @Test
-    void testGetCCActivationFlag_withValidData_shouldReturnTrue() throws Exception {
-        // Arrange
-        CardVO cardVO = new CardVO();
-        cardVO.setAccountNumber("1234567890");
-        List<CardVO> cardList = new ArrayList<>();
-        cardList.add(cardVO);
-
-        CardSummaryVO cardSummaryVO = new CardSummaryVO();
-        cardSummaryVO.setCardList(cardList);
-
-        BannerDisplayCounterVO bannerVO = new BannerDisplayCounterVO();
-        bannerVO.setCardNumber("1234567890");
-        bannerVO.setCounter(0);
-        List<BannerDisplayCounterVO> bannerList = new ArrayList<>();
-        bannerList.add(bannerVO);
-
-        when(cardBO.getCardSummary(any(CustomerVO.class))).thenReturn(cardSummaryVO);
-        when(customerBO.getBannerCounterList(anyString(), anyString())).thenReturn(bannerList);
-
-        // Act
-        Method method = YourClass.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-        method.setAccessible(true);
-        boolean result = (boolean) method.invoke(yourClass, customerVO, false);
-
-        // Assert
-        assertTrue(result);
-    }
-
-    @Test
-    void testGetCCActivationFlag_withMaxCounter_shouldReturnFalse() throws Exception {
-        // Arrange
-        CardVO cardVO = new CardVO();
-        cardVO.setAccountNumber("1234567890");
-        List<CardVO> cardList = new ArrayList<>();
-        cardList.add(cardVO);
-
-        CardSummaryVO cardSummaryVO = new CardSummaryVO();
-        cardSummaryVO.setCardList(cardList);
-
-        BannerDisplayCounterVO bannerVO = new BannerDisplayCounterVO();
-        bannerVO.setCardNumber("1234567890");
-        bannerVO.setCounter(SysParamConstant.CREDIT_CARD_ACTIVATION_MAX_DISPLAY_COUNTER);
-        List<BannerDisplayCounterVO> bannerList = new ArrayList<>();
-        bannerList.add(bannerVO);
-
-        when(cardBO.getCardSummary(any(CustomerVO.class))).thenReturn(cardSummaryVO);
-        when(customerBO.getBannerCounterList(anyString(), anyString())).thenReturn(bannerList);
-
-        // Act
-        Method method = YourClass.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-        method.setAccessible(true);
-        boolean result = (boolean) method.invoke(yourClass, customerVO, false);
-
-        // Assert
-        assertFalse(result);
-    }
-
-    @Test
-    void testGetCCActivationFlag_withEmptyCardList_shouldReturnFalse() throws Exception {
-        // Arrange
-        CardSummaryVO cardSummaryVO = new CardSummaryVO();
-        cardSummaryVO.setCardList(new ArrayList<>());
-
-        when(cardBO.getCardSummary(any(CustomerVO.class))).thenReturn(cardSummaryVO);
-        when(customerBO.getBannerCounterList(anyString(), anyString())).thenReturn(new ArrayList<>());
-
-        // Act
-        Method method = YourClass.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-        method.setAccessible(true);
-        boolean result = (boolean) method.invoke(yourClass, customerVO, false);
-
-        // Assert
-        assertFalse(result);
-    }
-
-    @Test
-    void testGetCCActivationFlag_withException_shouldReturnFalse() throws Exception {
-        // Arrange
-        when(cardBO.getCardSummary(any(CustomerVO.class))).thenThrow(new RuntimeException("Kong/CCMS failure"));
-
-        // Act
-        Method method = YourClass.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-        method.setAccessible(true);
-        boolean result = (boolean) method.invoke(yourClass, customerVO, false);
-
-        // Assert
-        assertFalse(result);
-    }
+public ModelAndView doViewLanding(HttpServletRequest request, HttpServletResponse response) throws Exception {
+			//code for HK T&C
+			try {
+				String tcJsonValue = (String) request.getSession().getAttribute(TC_JSON_VALUE);
+				logger.debug("tcJsonValue==:{},getIsTCAccepted from customervo--"+tcJsonValue+customerVO.getIsTCAccepted());
+				logger.debug("doViewLanding-TC_FLAG_ENABLE---"+request.getSession().getAttribute(TC_FLAG_ENABLE));
+				if(StringUtils.isNotBlank(tcJsonValue) && StringUtils.isNotBlank(customerVO.getIsTCAccepted())
+						&& (customerVO.getIsTCAccepted().equalsIgnoreCase(CommonConstant.CONST_N)
+						|| customerVO.getIsTCAccepted().equalsIgnoreCase(CommonConstant.CONST_Y))) {
+					/*ObjectMapper objectMapper = new ObjectMapper();
+					JsonNode rootNode = objectMapper.readTree(tcJsonValue);
+					JsonNode termsOuterArray = rootNode.path("terms");
+					if(termsOuterArray.isArray() && !termsOuterArray.isEmpty()){
+						JsonNode termInnerArray = termsOuterArray.get(0);
+						for(JsonNode term :termInnerArray) {
+							String termVersion = (String) term.path("term-version").asText();
+							logger.debug("termVersion:{},customerVO.getTcVersionNo-:{}"+termVersion + customerVO.getTcVersionNo());
+							if(((StringUtils.isNotBlank(termVersion)) && StringUtils.isBlank(customerVO.getTcVersionNo()))
+									|| ((StringUtils.isNotBlank(termVersion)) && (StringUtils.isNotBlank(customerVO.getTcVersionNo())
+									&& !customerVO.getTcVersionNo().equalsIgnoreCase(termVersion)))){
+								session.setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_Y);
+								session.setAttribute("termVersion",termVersion);
+								break;
+							}else{
+								session.setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_N);
+								break;
+							}
+						}
+					}*/
+					if(((StringUtils.isNotBlank(tcJsonValue)) && StringUtils.isBlank(customerVO.getTcVersionNo()))
+							|| ((StringUtils.isNotBlank(tcJsonValue)) && (StringUtils.isNotBlank(customerVO.getTcVersionNo())
+							&& !customerVO.getTcVersionNo().equalsIgnoreCase(tcJsonValue)))){
+						session.setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_Y);
+						session.setAttribute("termVersion",tcJsonValue);
+					}else{
+						session.setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_N);
+					}
+				}else{
+					logger.debug("else block-tcJsonValue-->"+tcJsonValue);
+					session.setAttribute(TC_FLAG_ENABLE, CommonConstant.CONST_Y);
+				}
+			} catch (Exception ex){
+				logger.error("T&C flag checks"+ex.getMessage());
+			}
 }
 
-@Test
-void testGetCCActivationFlag_withValidData_shouldReturnTrue() throws Exception {
-    // Arrange
-    YourClass yourClass = spy(new YourClass());  // Create spy
 
-    CardVO cardVO = new CardVO();
-    cardVO.setAccountNumber("1234567890");
-    List<CardVO> cardList = new ArrayList<>();
-    cardList.add(cardVO);
 
-    CardSummaryVO cardSummaryVO = new CardSummaryVO();
-    cardSummaryVO.setCardList(cardList);
 
-    BannerDisplayCounterVO bannerVO = new BannerDisplayCounterVO();
-    bannerVO.setCardNumber("1234567890");
-    bannerVO.setCounter(0); // Ensure this is < SysParamConstant.CREDIT_CARD_ACTIVATION_MAX_DISPLAY_COUNTER
-    List<BannerDisplayCounterVO> bannerList = new ArrayList<>();
-    bannerList.add(bannerVO);
-
-    // Mock dependencies
-    CardBO cardBO = mock(CardBO.class);
-    CustomerBO customerBO = mock(CustomerBO.class);
-    when(cardBO.getCardSummary(any())).thenReturn(cardSummaryVO);
-    when(customerBO.getBannerCounterList(any(), any())).thenReturn(bannerList);
-
-    // Inject mocks into yourClass instance
-    Field cardBOField = YourClass.class.getDeclaredField("cardBO");
-    cardBOField.setAccessible(true);
-    cardBOField.set(yourClass, cardBO);
-
-    Field customerBOField = YourClass.class.getDeclaredField("customerBO");
-    customerBOField.setAccessible(true);
-    customerBOField.set(yourClass, customerBO);
-
-    // Spy cardActivationFlagProcessing to return true
-    doReturn(true).when(yourClass).cardActivationFlagProcessing(any(), any(), anyString());
-
-    // Call the private method
-    Method method = YourClass.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-    method.setAccessible(true);
-
-    CustomerVO customerVO = new CustomerVO();
-    customerVO.setUserId("user123");
-
-    // Act
-    boolean result = (boolean) method.invoke(yourClass, customerVO, false);
-
-    // Assert
-    assertTrue(result, "Expected banner flag to be true with valid data");
-}
-
-@Test
-	public void testGetCCActivationFlag_withValidData_shouldReturnTrue() throws Exception {
-
-		LandingPageController landingPageControllerSpy = PowerMockito.spy(new LandingPageController());  // Create spy
-
-		CardVO cardVO = new CardVO();
-		cardVO.setAccountNumber("1234567890");
-		List<CardVO> cardList = new ArrayList<>();
-		cardList.add(cardVO);
-
-		CardSummaryVO cardSummaryVO = new CardSummaryVO();
-		cardSummaryVO.setCardList(cardList);
-
-		BannerDisplayCounterVO bannerVO = new BannerDisplayCounterVO();
-		bannerVO.setCardNumber("1234567890");
-		bannerVO.setCounter(0); // Ensure this is < SysParamConstant.CREDIT_CARD_ACTIVATION_MAX_DISPLAY_COUNTER
-		List<BannerDisplayCounterVO> bannerList = new ArrayList<>();
-		bannerList.add(bannerVO);
-
-		CardBO cardBO = mock(CardBO.class);
-		CustomerBO customerBO = mock(CustomerBO.class);
-		when(cardBO.getCardSummary((List) any())).thenReturn(cardSummaryVO);
-		when(customerBO.getBannerCounterList(any(), any())).thenReturn(bannerList);
-
-		Field cardBOField = LandingPageController.class.getDeclaredField("cardBO");
-		cardBOField.setAccessible(true);
-		cardBOField.set(landingPageControllerSpy, cardBO);
-
-		Field customerBOField = LandingPageController.class.getDeclaredField("customerBO");
-		customerBOField.setAccessible(true);
-		customerBOField.set(landingPageControllerSpy, customerBO);
-
-		PowerMockito.doReturn(true).when(landingPageControllerSpy,"cardActivationFlagProcessing", any(), any(), anyString());
-		Method method = LandingPageController.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-		method.setAccessible(true);
-		CustomerVO customerVO = new CustomerVO();
-		customerVO.setUserId("user123");
-		boolean result = (boolean) method.invoke(landingPageControllerSpy, customerVO, false);
-		assertTrue("Expected banner flag to be true with valid data", result);
+		public void doGetTCList(HttpServletRequest request, HttpServletResponse response) {
+		logger.debug("doGetTCList-tcJsonValue---"+request.getParameter(TC_JSON_VALUE));
+		logger.debug("doGetTCList-txnVersion --"+request.getParameter("tncVersion"));
+		if ((request.getParameter("tncVersion") != null || StringUtils.isNotBlank(request.getParameter(TC_JSON_VALUE))) && StringUtils.isBlank((String)request.getSession().getAttribute(TC_JSON_VALUE))) {
+			request.getSession().setAttribute(TC_JSON_VALUE, request.getParameter(TC_JSON_VALUE));
+			request.getSession().setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_N);
+			logger.debug("TermsCondition JSON value has been attached to session");
+		}
 	}
 
+	/**
+	 * Update User table post T&C accepted by user
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
+	public ModelAndView doTnCUpdate(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		logger.debug("doTnCUpdate-termsVersion --"+request.getParameter("termVersion"));
+		logger.debug("LandingPageController-doTnCUpdate-txnVersion-"+request.getSession().getAttribute("termVersion"));
+		HttpSession session = request.getSession(false);
+		CustomerVO customerVO = getCustomerVO();
+		customerVO.setIsTCAccepted(CommonConstant.CONST_Y);
+		customerVO.setTcAcceptedTime(new Date());
+		customerVO.setTcVersionNo(StringUtils.isNotBlank((String) session.getAttribute("termVersion"))?session.getAttribute("termVersion").toString():CommonConstant.PAD_ZERO);
+		customerBO.updateTermsAndCondition(customerVO);
+		getCustomerInfo().setCustomerVO(customerVO);
+		return doViewLanding(request, response);
+	}
+	
+	
+	
+	CustomerBO.Java
+	
+	 public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException;
+	 
+	 
+	 
+	CustomerBOImplementation.Java
+	
+	
+	@Override
+	public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException{
+		if (customerVO == null) {
+			throw new BusinessException("[updateTermsAndCondition: customerVO is null]");
+		}
+		try {
+				customerService.updateTermsAndCondition(customerVO);
 
-@Test
-public void testGetCCActivationFlag_withValidData_shouldReturnTrue() throws Exception {
-    // Prepare mocks
-    CardBO cardBO = mock(CardBO.class);
-    CustomerBO customerBO = mock(CustomerBO.class);
+		} catch (Exception e) {
+			handleException(e);
+		}
+	}
+	
+	
+	
+	CustomerDAO.Java
+	
 
-    // Prepare test data
-    CardVO cardVO = new CardVO();
-    cardVO.setAccountNumber("1234567890");
-    List<CardVO> cardList = Collections.singletonList(cardVO);
-    CardSummaryVO cardSummaryVO = new CardSummaryVO();
-    cardSummaryVO.setCardList(cardList);
+	/**
+	 *  T&C updated
+	 * @param customerVO
+	 * @throws DAOException
+	 */
+	public void updateUserTnCInfo(CustomerVO customerVO) throws DAOException;
+	
+	
+	CustomerDAOImplementation:
+	
+	
+	/**
+	 *  Terms and Condition CR
+	 * @param customerVO
+	 * @throws DAOException
+	 */
+	public void updateUserTnCInfo(CustomerVO customerVO) throws DAOException {
+		logger.debug("DAO-updateUserTnCInfo -Start --");
+		try {
+		Query query = currentSession().createQuery(
+				"update UserVO "
+						+ "set tcAcceptedTime = :tcAcceptedTime, tcVersionNo = :tcVersionNo, "
+						+ "isTCAccepted = :isTCAccepted, "
+						+ "updatedDate = :updatedDate, updatedBy = :updatedBy "
+						+ "where id = :id");
 
-    BannerDisplayCounterVO bannerVO = new BannerDisplayCounterVO();
-    bannerVO.setCardNumber("1234567890");
-    bannerVO.setCounter(0);
-    List<BannerDisplayCounterVO> bannerList = Collections.singletonList(bannerVO);
+		query.setParameter("tcAcceptedTime", customerVO.getTcAcceptedTime());
+		query.setParameter("tcVersionNo", customerVO.getTcVersionNo());
+		query.setParameter("isTCAccepted", customerVO.getIsTCAccepted());
+		query.setParameter("updatedDate", new Date());
+		query.setParameter("updatedBy", SysParamConstant.GBL_APP_NAME);
+		query.setParameter("id", customerVO.getId());
+		int i=query.executeUpdate();
+		logger.debug("DAO-updateUserTnCInfo -end --"+i);
+		}catch(Exception e ){
+			logger.error("ERROR IN DAO-updateUserTnCInfo :" + e.getMessage());
+		}
+	}
+	
+	
+	
+	CustomerService.Java
+	/**
+	 * T&C updates
+	 * @param customerVO
+	 * @throws BusinessException
+	 */
+	public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException;
+	
+	
+	
+	CustomerServiceImpl.Java
+	
+    /**
+     * updateTermsAndCondition
+     * @param customerVO
+     * @throws BusinessException
+     */
+    public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException{
+        if (customerVO == null) {
+            throw new BusinessException("[updateTermsAndCondition: customerVO is null]");
+        }
+        try {
+                customerDAO.updateUserTnCInfo(customerVO);
 
-    when(cardBO.getCardSummary(anyList())).thenReturn(cardSummaryVO);
-    when(customerBO.getBannerCounterList(any(), any())).thenReturn(bannerList);
+        } catch (DAOException e) {
+            throw new BusinessException(e);
+        }
 
-    // Spy and inject dependencies
-    LandingPageController landingPageControllerSpy = PowerMockito.spy(new LandingPageController());
-    Field cardBOField = LandingPageController.class.getDeclaredField("cardBO");
-    cardBOField.setAccessible(true);
-    cardBOField.set(landingPageControllerSpy, cardBO);
+    }
+	UserVO.Java  (Entity class)
+		
+	public String getTcVersionNo() { return tcVersionNo; }
+	public void setTcVersionNo(String tcVersionNo) { this.tcVersionNo = tcVersionNo; }
+	public Date getTcAcceptedTime() { return tcAcceptedTime; }
+	public void setTcAcceptedTime(Date tcAcceptedTime) { this.tcAcceptedTime = tcAcceptedTime; }
+	public String getIsTCAccepted() { return isTCAccepted; }
+	public void setIsTCAccepted(String isTCAccepted) { this.isTCAccepted = isTCAccepted; }
 
-    Field customerBOField = LandingPageController.class.getDeclaredField("customerBO");
-    customerBOField.setAccessible(true);
-    customerBOField.set(landingPageControllerSpy, customerBO);
+	
+	SecurityServiceImpl.Java
+	
+	  userVO.setIsTCAccepted(CommonConstant.CONST_Y);
+      userVO.setTcAcceptedTime(new Date());
+      userVO.setTcVersionNo(ralDetailVO.getTcVersionNo());
+				
+	  customerService.updateUserVO(userVO);
+	  
+	  
+	  
+	RALDetailVO.Java
+	
+	private String tcVersionNo;
+    public String getTcVersionNo() { return tcVersionNo; }
+    public void setTcVersionNo(String tcVersionNo) { this.tcVersionNo = tcVersionNo; }
+    
+	
+	OnlineRegistrationController.java
+	
+	       //TODOTAMIL JSON CONSUME
+        String termVersion = null;
+        String tcValue = (String) request.getSession().getAttribute("tcValue");
+        logger.debug("OnlineRegister-doEntryCreateCredential-tcValue-"+tcValue);
+        if(StringUtils.isNotBlank(tcValue)) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(tcValue);
+            JsonNode termsOuterArray = rootNode.path("terms");
+            if (termsOuterArray.isArray() && !termsOuterArray.isEmpty()) {
+                JsonNode termInnerArray = termsOuterArray.get(0);
+                for (JsonNode term : termInnerArray) {
+                    termVersion = (String) term.path("term-version").asText();
+                    request.getSession().setAttribute("termVersion",termVersion);
+                    logger.debug("OnlineRegister-doEntryCreateCredential-termVersion-"+termVersion);
+                    break;
+                }
+            }
+        }else{
+            logger.debug("OnlineBankingRegister-else --");
+            termVersion=CommonConstant.IBNK_TNC_DEFAULT_VERSION;
+            request.getSession().setAttribute("termVersion",termVersion);
+        }
+		
+		
+		
+		ralDetailVO.setTcVersionNo(StringUtils.isNotBlank(request.getSession().getAttribute("termVersion").toString())?request.getSession().getAttribute("termVersion").toString():CommonConstant.IBNK_TNC_DEFAULT_VERSION);
+        
 
-    // Mock private method call
-    PowerMockito.doReturn(true).when(landingPageControllerSpy, "cardActivationFlagProcessing", any(), any(), anyString());
 
-    // Invoke method and assert result
-    Method method = LandingPageController.class.getDeclaredMethod("getCCActivationFlag", CustomerVO.class, boolean.class);
-    method.setAccessible(true);
-    CustomerVO customerVO = new CustomerVO();
-    customerVO.setUserId("user123");
-
-    boolean result = (boolean) method.invoke(landingPageControllerSpy, customerVO, false);
-    assertTrue("Expected banner flag to be true with valid data", result);
-}
+	CustomerVO.hbm.xml
+	
+	        <!-- T&C required for SCBCIF. TBL_CUST_SERV -->
+        <property name="tcVersionNo" type="string" column="TC_VERSION_NO"/>
+        <property name="tcAcceptedTime" type="timestamp" column="TC_ACCEPTED_TIME"/>
+        <property name="isTCAccepted" type="string" column="TC_ACCEPTED_FLAG"/>
+		
+		
+	UserVO.hbm.xml
+	
+	        <!-- T&C required for SCBCIF. TBL_CUST_SERV -->
+        <property name="tcAcceptedTime" type="timestamp" column="TC_ACCEPTED_TIME"/>
+        <property name="tcVersionNo" type="string" column="TC_VERSION_NO"/>
+        <property name="isTCAccepted" type="string" column="TC_ACCEPTED_FLAG"/>
