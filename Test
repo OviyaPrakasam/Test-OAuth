@@ -250,3 +250,142 @@ public ModelAndView doViewLanding(HttpServletRequest request, HttpServletRespons
         <property name="tcAcceptedTime" type="timestamp" column="TC_ACCEPTED_TIME"/>
         <property name="tcVersionNo" type="string" column="TC_VERSION_NO"/>
         <property name="isTCAccepted" type="string" column="TC_ACCEPTED_FLAG"/>
+
+
+
+-----------------------------------------------------------------------------------------------------
+
+
+include.Jsp
+
+<script>
+ var tcFlagEnable ="${tcFlagEnable}";
+</script>
+
+
+<c:set var="tcFlagEnable" value="${sessionScope.tcFlagEnable}"/>
+
+<c:if test="${(tcFlagEnable == null or tcFlagEnable == '' or tcFlagEnable == 'Y')}">
+    <script type="text/javascript">
+                debugger;
+               async function getTncVersionJSON() {
+                    const response = await fetch('https://av.sc.com/configuration/hk-digital-banking-tnc-version-control.json');
+                    return ((response.ok) ? response.json() : false);
+                }
+             async function postTncData() {
+                var tncVersionData = await getTncVersionJSON();
+                console.log(tncVersionData);
+                var digitalTerms = tncVersionData.terms[0].filter(item=> {return item['term-id']=='con-tc001'})[0];
+                console.log(digitalTerms['term-version']);
+                var tncVersion = digitalTerms['term-version']
+                var termVersion = digitalTerms['term-version']
+                $.ajax({
+                 url: "/hk/nfs/ibank/landing.htm",
+                 type: "POST",
+                 data: { tcJsonValue: termVersion, a:'doGetTCList?tncVersion'+tncVersion},
+                 success: function(response) {
+                   console.log('data persisted');
+                   console.log(response);
+                   return response;
+                 },
+                 error: function(xhr) {
+                   console.log('1error');
+                   console.log(xhr);
+                   return null;
+                 }
+               });
+            }
+            postTncData();
+          </script>
+</c:if>
+
+
+landing.jsp
+
+<link rel="stylesheet" type="text/css" href="<spring:theme code="tncPopup"/>" media="all"/>
+<script type="text/javascript" src="${contextPath}/js/pdf.min.js"></script>
+<script  type="text/javascript" src="${contextPath}/js/pdf.worker.min.js"></script>
+<script type="text/javascript" src="${contextPath}/js/tnc_pdf_download.js"></script>
+<script type="text/javascript" src="${contextPath}/js/tnc_popup.js"></script>
+
+	<c:if test="${sessionScope.tcFlagEnable == 'Y'}">
+		<section id="sc-login-tc-popup"></section>
+		<section id="sc-login-notice-popup">
+			<!-- notice popup -->
+			<div class="sc-login-notice-box__popup">
+				<div class="sc-login-notice-box__popup-container">
+					<div style="margin:12px;"><p class="sc-login-notice-alert_img"></p></div>
+					<div style="font-size: 18px;color: #2772C7;">
+						<spring:message code="accounts.overview.tncNotice.title"/>
+					</div>
+					<div id="noticeContent" style="font-size:14px!important;line-height: 20px;text-align: justify;padding: 30px;max-height: 68%;overflow: auto;"></div>
+					<button onclick="agreeNotice()" style="margin-top: 5px;background: none;border: none;font-size: 18px;width: 92%;height: 42px;"><spring:message code="accounts.overview.tncNotice.okBtn"/></button>
+				</div>
+			</div>
+		</section>
+
+	</c:if>
+
+		
+	<section id="confirm-logout-popup" class="hide">
+		<div class="confirm-logout-popup-box__popup">
+			<div class="confirm-logout-popup-box__popup-container">
+				<div style="margin:12px;"><p class="sc-login-notice-alert_img"></p></div>
+				<div style="color: #2772C7;">
+					<span style="font-size: 20px;"><spring:message code="accounts.overview.confirmLogoutPopup.title"/></span>
+				</div>
+				<p style="text-align: justify;padding: 20px;font-size: 12px;">
+					<spring:message code="accounts.overview.confirmLogoutPopup.Content"/>
+				</p>
+				<div class="confirmLogout_btn_group">
+					<button onclick="CancelLogout()" class="confirmLogout_btn"><spring:message code="accounts.overview.confirmLogoutPopup.cancel"/></button>
+					<button onclick="Logout()" class="confirmLogout_btn"><spring:message code="accounts.overview.confirmLogoutPopup.agree"/></button>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<script>
+		async function getTncMaintenanceMsg(url) {
+			const response = await fetch('https://av.sc.com/configuration/hk-digital-banking-tnc-update-notice.json');
+			return ((response.ok) ? response.json() : false);
+		}
+		async function setNoticeContent() {
+			var message = await getTncMaintenanceMsg();
+			console.log(message);
+			// var currentUserLang = userLang == 'zh_CN' ? 'cn' : userLang == 'zh_HK' ? 'zh' : 'en';
+			var noticeContentMsg = message.filter(item => {return item.lang==userLang})[0].tncMaintenanceMessage;
+			console.log(noticeContentMsg);
+			console.log(document.getElementById('noticeContent'));
+			document.getElementById('noticeContent').innerHTML = noticeContentMsg;
+		}
+		setNoticeContent();
+		
+		function agreeNotice() {
+			document.getElementById('sc-login-notice-popup').classList.add('hide');
+			tncPopup('sc-login-tc-popup', ['https://av.sc.com/hk/content/docs/hk-digital-tnc.pdf'],'',onTncAccept);
+		}
+		function Logout() {
+			document.getElementsByClassName('sc-login-box__popup')[0].classList.remove('blank_bg');
+			document.getElementById('sc-login-tc-popup').classList.add('hide');
+			window.location = '${ibankPath}/ibank_logout.htm';
+		}
+		function CancelLogout() {
+			document.getElementById('confirm-logout-popup').classList.add('hide');
+		}
+		function onTncAccept() {
+			$.ajax({
+				type:'POST',
+				url:"${ibankPath}/landing.htm?a=doTnCUpdate",
+				timeout:60000,
+				success:function(status){},
+				error:function(){},
+			});
+		}
+	</script>
+
+
+Main.jsp
+
+var tcFlagEnable = ${tcFlagEnable};
+
