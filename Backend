@@ -194,687 +194,95 @@ public interface CustomerBO {
     void updateTermsAndCondition(CustomerVO var1) throws BusinessException;
 }
 
-
----------------------------------
-
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
-package com.scb.nfs.ibank.customer.vo;
-
-import com.scb.nfs.base.vo.BaseVO;
-import com.scb.nfs.ibank.common.vo.AccessTokenVO;
-import java.math.BigDecimal;
-import java.util.Date;
-
 public class CustomerVO extends BaseVO {
+    private static final long serialVersionUID = -1L;
+    private Long id;
+    private String userId;
+    private String userPassword;
+    private String customerEBID;
+    private String customerPBID;
+    private String customerIdType;
+    private String customerId;
+    private String customerName1;
+    private String customerName2;
+    private Boolean ksFlag;
+    private String customerStatusCode;
+    private String language;
+    private Date lastLoginDate;
+    private Date firstLoginDate;
+    private String isLoggedIn;
+    private Boolean isActivated;
+    private Integer loginCounter;
+    private String accessKey;
+    private String twoFAType;
+    private Integer alpCounter;
+    private String notificationType;
+    private String mobileNumber;
+    private Boolean isLocked;
+    private String emailAddress;
+    private String nickName;
+    private String systemType;
+    private String brandIndicator;
+    private String armCode;
+    private String relTyp;
+    private String packageStatus;
+    private Integer loginSuccessCount;
+    private Long customerSequenceNo;
+    private SmeVO smeVO;
+    private String txnPasswordStatus;
+    private String migrationStatus;
+    private boolean e2eMigrationStatus;
+    private Boolean isSmallValueLimitEnabled;
+    private Boolean isHkIsolationPilotUser = false;
+    private String isDigitalBCPMode;
+    private String customerLilyId;
+    private String eventLogId;
+    private AccessTokenVO accessToken;
+    private String sex;
+    private Date dateOfBirth;
+    private String address1;
+    private String address2;
+    private String address3;
+    private String address4;
+    private String district;
+    private String area;
+    private String country;
+    private String postalCode;
+    private String nationalityCode;
+    private String nationId;
+    private String tinNumber;
+    private BigDecimal income;
+    private String education;
+    private String passportNumber;
+    private String residencyStatus;
+    private String segIndicator;
+    private String riskCode;
+    private String empStudentWorkId;
+    private Date relationOpenDate;
+    private String relationshipRiskCodes;
+    private Date accountOpenDate;
+    private String msgSeqNumber;
+    private String custEmployer;
+    private String tcVersionNo;
+    private Date tcAcceptedTime;
+    private String isTCAccepted;
+    private String strRTOBAOProductCD;
+    private String custRTOBEnable;
+    private String bonusPayrollStatus;
+    private String bonusPayrollAccount;
+    private String bonusPayrollCurrency;
+    private String custFXmemberShip;
+    private String txnCurrencyCode;
+    private String toAccountNo;
+    private String amount;
+    private String toAccountName;
+    private String bonusPayrollIndicator;
+    private Date enrollDate;
+    private Date activeDate;
+    private Date lastPayrollDate;
 
     public CustomerVO() {
     }
 
-    public String getCustEmployer() {
-        return this.custEmployer;
-    }
-
-    public void setCustEmployer(String custEmployer) {
-        this.custEmployer = custEmployer;
-    }
-
-    public String getStrRTOBAOProductCD() {
-        return this.strRTOBAOProductCD;
-    }
-
-    public void setStrRTOBAOProductCD(String strRTOBAOProductCD) {
-        this.strRTOBAOProductCD = strRTOBAOProductCD;
-    }
-
-    public String getCustRTOBEnable() {
-        return this.custRTOBEnable;
-    }
-
-    public void setCustRTOBEnable(String custRTOBEnable) {
-        this.custRTOBEnable = custRTOBEnable;
-    }
-
-    public String getCustFXmemberShip() {
-        return this.custFXmemberShip;
-    }
-
-    public void setCustFXmemberShip(String custFXmemberShip) {
-        this.custFXmemberShip = custFXmemberShip;
-    }
-
-    public String getTxnCurrencyCode() {
-        return this.txnCurrencyCode;
-    }
-
-    public void setTxnCurrencyCode(String txnCurrencyCode) {
-        this.txnCurrencyCode = txnCurrencyCode;
-    }
-
-    public String getToAccountNo() {
-        return this.toAccountNo;
-    }
-
-    public void setToAccountNo(String toAccountNo) {
-        this.toAccountNo = toAccountNo;
-    }
-
-    public String getAmount() {
-        return this.amount;
-    }
-
-    public void setAmount(String amount) {
-        this.amount = amount;
-    }
-
-    public String getToAccountName() {
-        return this.toAccountName;
-    }
-
-    public void setToAccountName(String toAccountName) {
-        this.toAccountName = toAccountName;
-    }
-
-    public String getBonusPayrollCurrency() {
-        return this.bonusPayrollCurrency;
-    }
-
-    public void setBonusPayrollCurrency(String bonusPayrollCurrency) {
-        this.bonusPayrollCurrency = bonusPayrollCurrency;
-    }
-
-    public String getBonusPayrollAccount() {
-        return this.bonusPayrollAccount;
-    }
-
-    public void setBonusPayrollAccount(String bonusPayrollAccount) {
-        this.bonusPayrollAccount = bonusPayrollAccount;
-    }
-
-    public String getBonusPayrollStatus() {
-        return this.bonusPayrollStatus;
-    }
-
-    public void setBonusPayrollStatus(String bonusPayrollStatus) {
-        this.bonusPayrollStatus = bonusPayrollStatus;
-    }
-
-    public String getBonusPayrollIndicator() {
-        return this.bonusPayrollIndicator;
-    }
-
-    public void setBonusPayrollIndicator(String bonusPayrollIndicator) {
-        this.bonusPayrollIndicator = bonusPayrollIndicator;
-    }
-
-    public Date getEnrollDate() {
-        return this.enrollDate;
-    }
-
-    public void setEnrollDate(Date enrollDate) {
-        this.enrollDate = enrollDate;
-    }
-
-    public Date getLastPayrollDate() {
-        return this.lastPayrollDate;
-    }
-
-    public void setLastPayrollDate(Date lastPayrollDate) {
-        this.lastPayrollDate = lastPayrollDate;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUserId() {
-        return this.userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getUserPassword() {
-        return this.userPassword;
-    }
-
-    public Boolean getKsFlag() {
-        return this.ksFlag;
-    }
-
-    public void setKsFlag(Boolean ksFlag) {
-        this.ksFlag = ksFlag;
-    }
-
-    public void setUserPassword(String userPassword) {
-        this.userPassword = userPassword;
-    }
-
-    public String getCustomerEBID() {
-        return this.customerEBID;
-    }
-
-    public void setCustomerEBID(String customerEBID) {
-        this.customerEBID = customerEBID;
-    }
-
-    public String getCustomerPBID() {
-        return this.customerPBID;
-    }
-
-    public void setCustomerPBID(String customerPBID) {
-        this.customerPBID = customerPBID;
-    }
-
-    public String getCustomerIdType() {
-        return this.customerIdType;
-    }
-
-    public void setCustomerIdType(String customerIdType) {
-        this.customerIdType = customerIdType;
-    }
-
-    public String getCustomerId() {
-        return this.customerId;
-    }
-
-    public void setCustomerId(String customerId) {
-        this.customerId = customerId;
-    }
-
-    public String getCustomerName1() {
-        return this.customerName1;
-    }
-
-    public void setCustomerName1(String customerName1) {
-        this.customerName1 = customerName1;
-    }
-
-    public String getCustomerStatusCode() {
-        return this.customerStatusCode;
-    }
-
-    public void setCustomerStatusCode(String customerStatusCode) {
-        this.customerStatusCode = customerStatusCode;
-    }
-
-    public String getLanguage() {
-        return this.language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public Date getLastLoginDate() {
-        return this.lastLoginDate;
-    }
-
-    public void setLastLoginDate(Date lastLoginDate) {
-        this.lastLoginDate = lastLoginDate;
-    }
-
-    public Date getFirstLoginDate() {
-        return this.firstLoginDate;
-    }
-
-    public void setFirstLoginDate(Date firstLoginDate) {
-        this.firstLoginDate = firstLoginDate;
-    }
-
-    public String getIsLoggedIn() {
-        return this.isLoggedIn;
-    }
-
-    public void setIsLoggedIn(String isLoggedIn) {
-        this.isLoggedIn = isLoggedIn;
-    }
-
-    public Integer getLoginCounter() {
-        return this.loginCounter;
-    }
-
-    public void setLoginCounter(Integer loginCounter) {
-        this.loginCounter = loginCounter;
-    }
-
-    public String getAccessKey() {
-        return this.accessKey;
-    }
-
-    public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
-    }
-
-    public String getTwoFAType() {
-        return this.twoFAType;
-    }
-
-    public void setTwoFAType(String twoFAType) {
-        this.twoFAType = twoFAType;
-    }
-
-    public Integer getAlpCounter() {
-        return this.alpCounter;
-    }
-
-    public void setAlpCounter(Integer alpCounter) {
-        this.alpCounter = alpCounter;
-    }
-
-    public String getNotificationType() {
-        return this.notificationType;
-    }
-
-    public void setNotificationType(String notificationType) {
-        this.notificationType = notificationType;
-    }
-
-    public String getMobileNumber() {
-        return this.mobileNumber;
-    }
-
-    public void setMobileNumber(String mobileNumber) {
-        this.mobileNumber = mobileNumber;
-    }
-
-    public Boolean getIsLocked() {
-        return this.isLocked;
-    }
-
-    public void setIsLocked(Boolean isLocked) {
-        this.isLocked = isLocked;
-    }
-
-    public String getEmailAddress() {
-        return this.emailAddress;
-    }
-
-    public void setEmailAddress(String emailAddress) {
-        this.emailAddress = emailAddress;
-    }
-
-    public String getNickName() {
-        return this.nickName;
-    }
-
-    public void setNickName(String nickName) {
-        this.nickName = nickName;
-    }
-
-    public String getSystemType() {
-        return this.systemType;
-    }
-
-    public void setSystemType(String systemType) {
-        this.systemType = systemType;
-    }
-
-    public SmeVO getSmeVO() {
-        return this.smeVO;
-    }
-
-    public void setSmeVO(SmeVO smeVO) {
-        this.smeVO = smeVO;
-    }
-
-    public Boolean getIsActivated() {
-        return this.isActivated;
-    }
-
-    public void setIsActivated(Boolean isActivated) {
-        this.isActivated = isActivated;
-    }
-
-    public String getBrandIndicator() {
-        return this.brandIndicator;
-    }
-
-    public void setBrandIndicator(String brandIndicator) {
-        this.brandIndicator = brandIndicator;
-    }
-
-    public String getArmCode() {
-        return this.armCode;
-    }
-
-    public void setArmCode(String armCode) {
-        this.armCode = armCode;
-    }
-
-    public String getRelTyp() {
-        return this.relTyp;
-    }
-
-    public void setRelTyp(String relTyp) {
-        this.relTyp = relTyp;
-    }
-
-    public void setCustomerName2(String customerName2) {
-        this.customerName2 = customerName2;
-    }
-
-    public String getCustomerName2() {
-        return this.customerName2;
-    }
-
-    public Integer getLoginSuccessCount() {
-        return this.loginSuccessCount;
-    }
-
-    public void setLoginSuccessCount(Integer loginSuccessCount) {
-        this.loginSuccessCount = loginSuccessCount;
-    }
-
-    public Long getCustomerSequenceNo() {
-        return this.customerSequenceNo;
-    }
-
-    public void setCustomerSequenceNo(Long customerSequenceNo) {
-        this.customerSequenceNo = customerSequenceNo;
-    }
-
-    public String getPackageStatus() {
-        return this.packageStatus;
-    }
-
-    public void setPackageStatus(String packageStatus) {
-        this.packageStatus = packageStatus;
-    }
-
-    public String getTxnPasswordStatus() {
-        return this.txnPasswordStatus;
-    }
-
-    public void setTxnPasswordStatus(String txnPasswordStatus) {
-        this.txnPasswordStatus = txnPasswordStatus;
-    }
-
-    public String getMigrationStatus() {
-        return this.migrationStatus;
-    }
-
-    public void setMigrationStatus(String migrationStatus) {
-        this.migrationStatus = migrationStatus;
-    }
-
-    public boolean isE2eMigrationStatus() {
-        return this.e2eMigrationStatus;
-    }
-
-    public void setE2eMigrationStatus(boolean e2eMigrationStatus) {
-        this.e2eMigrationStatus = e2eMigrationStatus;
-    }
-
-    public Boolean getIsSmallValueLimitEnabled() {
-        return this.isSmallValueLimitEnabled;
-    }
-
-    public void setIsSmallValueLimitEnabled(Boolean isSmallValueLimitEnabled) {
-        this.isSmallValueLimitEnabled = isSmallValueLimitEnabled;
-    }
-
-    public Boolean getIsHkIsolationPilotUser() {
-        return this.isHkIsolationPilotUser;
-    }
-
-    public void setIsHkIsolationPilotUser(Boolean isHkIsolationPilotUser) {
-        this.isHkIsolationPilotUser = isHkIsolationPilotUser;
-    }
-
-    public String getCustomerLilyId() {
-        return this.customerLilyId;
-    }
-
-    public void setCustomerLilyId(String customerLilyId) {
-        this.customerLilyId = customerLilyId;
-    }
-
-    public String getEventLogId() {
-        return this.eventLogId;
-    }
-
-    public void setEventLogId(String eventLogId) {
-        this.eventLogId = eventLogId;
-    }
-
-    public String getIsDigitalBCPMode() {
-        return this.isDigitalBCPMode;
-    }
-
-    public void setIsDigitalBCPMode(String isDigitalBCPMode) {
-        this.isDigitalBCPMode = isDigitalBCPMode;
-    }
-
-    public AccessTokenVO getAccessToken() {
-        return this.accessToken;
-    }
-
-    public void setAccessToken(AccessTokenVO accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    public String getSex() {
-        return this.sex;
-    }
-
-    public void setSex(String sex) {
-        this.sex = sex;
-    }
-
-    public Date getDateOfBirth() {
-        return this.dateOfBirth;
-    }
-
-    public void setDateOfBirth(Date dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public String getAddress1() {
-        return this.address1;
-    }
-
-    public void setAddress1(String address1) {
-        this.address1 = address1;
-    }
-
-    public String getAddress2() {
-        return this.address2;
-    }
-
-    public void setAddress2(String address2) {
-        this.address2 = address2;
-    }
-
-    public String getAddress3() {
-        return this.address3;
-    }
-
-    public void setAddress3(String address3) {
-        this.address3 = address3;
-    }
-
-    public String getAddress4() {
-        return this.address4;
-    }
-
-    public void setAddress4(String address4) {
-        this.address4 = address4;
-    }
-
-    public String getDistrict() {
-        return this.district;
-    }
-
-    public void setDistrict(String district) {
-        this.district = district;
-    }
-
-    public String getArea() {
-        return this.area;
-    }
-
-    public void setArea(String area) {
-        this.area = area;
-    }
-
-    public String getCountry() {
-        return this.country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getPostalCode() {
-        return this.postalCode;
-    }
-
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
-    }
-
-    public String getNationalityCode() {
-        return this.nationalityCode;
-    }
-
-    public void setNationalityCode(String nationalityCode) {
-        this.nationalityCode = nationalityCode;
-    }
-
-    public String getNationId() {
-        return this.nationId;
-    }
-
-    public void setNationId(String nationId) {
-        this.nationId = nationId;
-    }
-
-    public String getTinNumber() {
-        return this.tinNumber;
-    }
-
-    public void setTinNumber(String tinNumber) {
-        this.tinNumber = tinNumber;
-    }
-
-    public BigDecimal getIncome() {
-        return this.income;
-    }
-
-    public void setIncome(BigDecimal income) {
-        this.income = income;
-    }
-
-    public String getEducation() {
-        return this.education;
-    }
-
-    public void setEducation(String education) {
-        this.education = education;
-    }
-
-    public String getPassportNumber() {
-        return this.passportNumber;
-    }
-
-    public void setPassportNumber(String passportNumber) {
-        this.passportNumber = passportNumber;
-    }
-
-    public String getResidencyStatus() {
-        return this.residencyStatus;
-    }
-
-    public void setResidencyStatus(String residencyStatus) {
-        this.residencyStatus = residencyStatus;
-    }
-
-    public String getSegIndicator() {
-        return this.segIndicator;
-    }
-
-    public void setSegIndicator(String segIndicator) {
-        this.segIndicator = segIndicator;
-    }
-
-    public String getRiskCode() {
-        return this.riskCode;
-    }
-
-    public void setRiskCode(String riskCode) {
-        this.riskCode = riskCode;
-    }
-
-    public String getEmpStudentWorkId() {
-        return this.empStudentWorkId;
-    }
-
-    public void setEmpStudentWorkId(String empStudentWorkId) {
-        this.empStudentWorkId = empStudentWorkId;
-    }
-
-    public Date getRelationOpenDate() {
-        return this.relationOpenDate;
-    }
-
-    public void setRelationOpenDate(Date relationOpenDate) {
-        this.relationOpenDate = relationOpenDate;
-    }
-
-    public String getRelationshipRiskCodes() {
-        return this.relationshipRiskCodes;
-    }
-
-    public void setRelationshipRiskCodes(String relationshipRiskCodes) {
-        this.relationshipRiskCodes = relationshipRiskCodes;
-    }
-
-    public Date getAccountOpenDate() {
-        return this.accountOpenDate;
-    }
-
-    public void setAccountOpenDate(Date accountOpenDate) {
-        this.accountOpenDate = accountOpenDate;
-    }
-
-    public String getMsgSeqNumber() {
-        return this.msgSeqNumber;
-    }
-
-    public void setMsgSeqNumber(String msgSeqNumber) {
-        this.msgSeqNumber = msgSeqNumber;
-    }
-
-    public String getTcVersionNo() {
-        return this.tcVersionNo;
-    }
-
-    public void setTcVersionNo(String tcVersionNo) {
-        this.tcVersionNo = tcVersionNo;
-    }
-
-    public Date getTcAcceptedTime() {
-        return this.tcAcceptedTime;
-    }
-
-    public void setTcAcceptedTime(Date tcAcceptedTime) {
-        this.tcAcceptedTime = tcAcceptedTime;
-    }
-
-    public String getIsTCAccepted() {
-        return this.isTCAccepted;
-    }
-
-    public void setIsTCAccepted(String isTCAccepted) {
-        this.isTCAccepted = isTCAccepted;
-    }
+// Getter setters
 }
