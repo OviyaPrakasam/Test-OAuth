@@ -1,0 +1,77 @@
+package com.yourorg.tnc.service.impl;
+
+import com.yourorg.tnc.api.TnCService;
+import com.yourorg.common.context.request.TncRequest;
+import com.yourorg.common.context.response.TncStatusResponse;
+import com.yourorg.common.constants.CommonConstant;
+
+import com.yourorg.foa.customer.CustomerBO;
+import com.yourorg.foa.customer.model.CustomerVO;
+
+public class TnCServiceImpl implements TnCService {
+
+    private CustomerBO customerBO;
+
+    @Override
+    public TncStatusResponse checkTnCRequired(TncRequest request) {
+        TncStatusResponse response = new TncStatusResponse();
+
+        try {
+            String customerId = request.getCustomerId();
+            CustomerVO customerVO = customerBO.getCustomerDetails(customerId);
+
+            if (customerVO == null) {
+                response.setErrorCode("404");
+                response.setErrorDesc("Customer not found");
+                response.setSuccess(false);
+                return response;
+            }
+
+            String tncVersion = customerVO.getTermConditionVersion();
+            boolean showTnC = (tncVersion == null || !tncVersion.equals(request.getTermVersion()));
+
+            response.setTncFlagEnable(showTnC ? CommonConstant.CONST_Y : CommonConstant.CONST_N);
+            response.setTermVersion(tncVersion);
+            response.setSuccess(true);
+        } catch (Exception e) {
+            response.setErrorCode("500");
+            response.setErrorDesc("Internal Error: " + e.getMessage());
+            response.setSuccess(false);
+        }
+
+        return response;
+    }
+
+    @Override
+    public TncStatusResponse updateTnCStatus(TncRequest request) {
+        TncStatusResponse response = new TncStatusResponse();
+
+        try {
+            String customerId = request.getCustomerId();
+            CustomerVO customerVO = customerBO.getCustomerDetails(customerId);
+
+            if (customerVO == null) {
+                response.setErrorCode("404");
+                response.setErrorDesc("Customer not found");
+                response.setSuccess(false);
+                return response;
+            }
+
+            customerVO.setTermConditionVersion(request.getTermVersion());
+            customerBO.updateCustomer(customerVO);
+
+            response.setSuccess(true);
+            response.setTermVersion(request.getTermVersion());
+        } catch (Exception e) {
+            response.setErrorCode("500");
+            response.setErrorDesc("Internal Error: " + e.getMessage());
+            response.setSuccess(false);
+        }
+
+        return response;
+    }
+
+    public void setCustomerBO(CustomerBO customerBO) {
+        this.customerBO = customerBO;
+    }
+}
