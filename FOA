@@ -1,0 +1,282 @@
+LandingPageController
+
+
+	public static final String TC_JSON_VALUE = "tcJsonValue";
+	public static final String TC_FLAG_ENABLE = "tcFlagEnable";
+	public static final String TC_VERSION_VALUE = "termVersion";
+	
+	public ModelAndView doViewLanding(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	
+		//code for HK T&C
+	try {
+		String termVersion = (String) request.getSession().getAttribute(TC_VERSION_VALUE);
+		logger.debug("tcJsonValue==:{},getIsTCAccepted from customervo--"+termVersion+customerVO.getIsTCAccepted());
+		logger.debug("doViewLanding-TC_FLAG_ENABLE---"+request.getSession().getAttribute(TC_FLAG_ENABLE));
+		if(StringUtils.isNotBlank(termVersion) && StringUtils.isNotBlank(customerVO.getIsTCAccepted())) {
+			if(customerVO.getIsTCAccepted().equalsIgnoreCase(CommonConstant.CONST_N)
+				|| (!customerVO.getTcVersionNo().equalsIgnoreCase(termVersion))) {
+				session.setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_Y);
+				session.setAttribute("termVersion",termVersion);
+			}else{
+				session.setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_N);
+			}
+		}else{
+			logger.debug("else block-tcJsonValue-->"+termVersion);
+			session.setAttribute(TC_FLAG_ENABLE, CommonConstant.CONST_Y);
+		}
+	} catch (Exception ex){
+		logger.error("T&C flag checks"+ex.getMessage());
+	}
+}
+
+	/**
+	 * Update User table post T&C accepted by user
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
+	public ModelAndView doTnCUpdate(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		logger.debug("doTnCUpdate-termsVersion --"+request.getParameter("termVersion"));
+		logger.debug("LandingPageController-doTnCUpdate-txnVersion-"+request.getSession().getAttribute("termVersion"));
+		HttpSession session = request.getSession(false);
+		CustomerVO customerVO = getCustomerVO();
+		customerVO.setIsTCAccepted(CommonConstant.CONST_Y);
+		customerVO.setTcAcceptedTime(new Date());
+		customerVO.setTcVersionNo(StringUtils.isNotBlank((String) session.getAttribute("termVersion"))?session.getAttribute("termVersion").toString():CommonConstant.PAD_ZERO);
+		customerBO.updateTermsAndCondition(customerVO);
+		getCustomerInfo().setCustomerVO(customerVO);
+		return doViewLanding(request, response);
+	}
+	
+
+	Digital2faController.Java
+	
+	public static final String TC_FLAG_ENABLE = "tcFlagEnable";
+	public static final String TC_VERSION_VALUE = "termVersion";
+	
+	
+	public ModelAndView doGetTCList(HttpServletRequest request, HttpServletResponse response) {
+	logger.debug("doGetTCList-termVersion---"+request.getParameter(TC_VERSION_VALUE));
+	String termversion = request.getParameter(TC_VERSION_VALUE);
+	if(StringUtils.isNotBlank(termversion) && StringUtils.isBlank((String)request.getSession().getAttribute(TC_VERSION_VALUE)))
+	{
+		request.getSession().setAttribute(TC_VERSION_VALUE, request.getParameter(TC_VERSION_VALUE));
+		request.getSession().setAttribute(TC_FLAG_ENABLE,CommonConstant.CONST_N);
+		logger.debug("TermsCondition JSON value has been attached to session");
+	}
+		return null;
+	}
+	
+	
+
+	
+	OnlineRegistrationController.Java
+	
+	 public ModelAndView doSubmitCreateCredential(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+		//TODO TAMIL JSON CONSUME
+        String termVersion = null;
+        String tcValue = (String) request.getSession().getAttribute("termVersion");
+        logger.debug("OnlineRegister-doEntryCreateCredential-tcValue-"+tcValue);
+        if(StringUtils.isBlank(tcValue)) {
+            logger.debug("OnlineBankingRegister-else --");
+            termVersion=CommonConstant.IBNK_TNC_DEFAULT_VERSION;
+            request.getSession().setAttribute("termVersion",termVersion);
+            }
+
+
+	}
+	
+	
+	TriggerAjaxOTP.java
+	
+	public static final String TC_FLAG_ENABLE = "tcFlagEnable";
+
+	public static final String TC_VERSION_VALUE = "termVersion";
+	
+	
+		public ModelAndView doGetTCList(HttpServletRequest request, HttpServletResponse response) {
+		logger.debug("doGetTCList-termVersion---"+request.getParameter(TC_VERSION_VALUE));
+		String termversion = request.getParameter(TC_VERSION_VALUE);
+		if(StringUtils.isNotBlank(termversion) && StringUtils.isBlank((String)request.getSession().getAttribute(TC_VERSION_VALUE)))
+		{
+			request.getSession().setAttribute(TC_VERSION_VALUE, request.getParameter(TC_VERSION_VALUE));
+			request.getSession().setAttribute(TC_FLAG_ENABLE, CommonConstant.CONST_N);
+			logger.debug("TermsCondition JSON value has been attached to session");
+		}
+		return null;
+	}
+	
+	
+	
+	
+	CustomerBO.Java
+	
+	 public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException;
+	 
+	 
+	 
+	CustomerBOImplementation.Java
+	
+	
+	@Override
+	public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException{
+		if (customerVO == null) {
+			throw new BusinessException("[updateTermsAndCondition: customerVO is null]");
+		}
+		try {
+				customerService.updateTermsAndCondition(customerVO);
+
+		} catch (Exception e) {
+			handleException(e);
+		}
+	}
+	
+	
+	
+	CustomerDAO.Java
+	
+
+	/**
+	 *  T&C updated
+	 * @param customerVO
+	 * @throws DAOException
+	 */
+	public void updateUserTnCInfo(CustomerVO customerVO) throws DAOException;
+	
+	
+	CustomerDAOImplementation:
+	
+	
+	/**
+	 *  Terms and Condition CR
+	 * @param customerVO
+	 * @throws DAOException
+	 */
+	public void updateUserTnCInfo(CustomerVO customerVO) throws DAOException {
+		logger.debug("DAO-updateUserTnCInfo -Start --");
+		try {
+		Query query = currentSession().createQuery(
+				"update UserVO "
+						+ "set tcAcceptedTime = :tcAcceptedTime, tcVersionNo = :tcVersionNo, "
+						+ "isTCAccepted = :isTCAccepted, "
+						+ "updatedDate = :updatedDate, updatedBy = :updatedBy "
+						+ "where id = :id");
+
+		query.setParameter("tcAcceptedTime", customerVO.getTcAcceptedTime());
+		query.setParameter("tcVersionNo", customerVO.getTcVersionNo());
+		query.setParameter("isTCAccepted", customerVO.getIsTCAccepted());
+		query.setParameter("updatedDate", new Date());
+		query.setParameter("updatedBy", SysParamConstant.GBL_APP_NAME);
+		query.setParameter("id", customerVO.getId());
+		int i=query.executeUpdate();
+		logger.debug("DAO-updateUserTnCInfo -end --"+i);
+		}catch(Exception e ){
+			logger.error("ERROR IN DAO-updateUserTnCInfo :" + e.getMessage());
+		}
+	}
+	
+	
+	
+	CustomerService.Java
+	/**
+	 * T&C updates
+	 * @param customerVO
+	 * @throws BusinessException
+	 */
+	public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException;
+	
+	
+	
+	CustomerServiceImpl.Java
+	
+    /**
+     * updateTermsAndCondition
+     * @param customerVO
+     * @throws BusinessException
+     */
+    public void updateTermsAndCondition(CustomerVO customerVO) throws BusinessException{
+        if (customerVO == null) {
+            throw new BusinessException("[updateTermsAndCondition: customerVO is null]");
+        }
+        try {
+                customerDAO.updateUserTnCInfo(customerVO);
+
+        } catch (DAOException e) {
+            throw new BusinessException(e);
+        }
+
+    }
+	UserVO.Java  (Entity class)
+		
+	public String getTcVersionNo() { return tcVersionNo; }
+	public void setTcVersionNo(String tcVersionNo) { this.tcVersionNo = tcVersionNo; }
+	public Date getTcAcceptedTime() { return tcAcceptedTime; }
+	public void setTcAcceptedTime(Date tcAcceptedTime) { this.tcAcceptedTime = tcAcceptedTime; }
+	public String getIsTCAccepted() { return isTCAccepted; }
+	public void setIsTCAccepted(String isTCAccepted) { this.isTCAccepted = isTCAccepted; }
+
+	
+	SecurityServiceImpl.Java
+	
+	  userVO.setIsTCAccepted(CommonConstant.CONST_Y);
+      userVO.setTcAcceptedTime(new Date());
+      userVO.setTcVersionNo(ralDetailVO.getTcVersionNo());
+				
+	  customerService.updateUserVO(userVO);
+	  
+	  
+	  
+	RALDetailVO.Java
+	
+	private String tcVersionNo;
+    public String getTcVersionNo() { return tcVersionNo; }
+    public void setTcVersionNo(String tcVersionNo) { this.tcVersionNo = tcVersionNo; }
+    
+	
+	OnlineRegistrationController.java
+	
+	       //TODOTAMIL JSON CONSUME
+        String termVersion = null;
+        String tcValue = (String) request.getSession().getAttribute("tcValue");
+        logger.debug("OnlineRegister-doEntryCreateCredential-tcValue-"+tcValue);
+        if(StringUtils.isNotBlank(tcValue)) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(tcValue);
+            JsonNode termsOuterArray = rootNode.path("terms");
+            if (termsOuterArray.isArray() && !termsOuterArray.isEmpty()) {
+                JsonNode termInnerArray = termsOuterArray.get(0);
+                for (JsonNode term : termInnerArray) {
+                    termVersion = (String) term.path("term-version").asText();
+                    request.getSession().setAttribute("termVersion",termVersion);
+                    logger.debug("OnlineRegister-doEntryCreateCredential-termVersion-"+termVersion);
+                    break;
+                }
+            }
+        }else{
+            logger.debug("OnlineBankingRegister-else --");
+            termVersion=CommonConstant.IBNK_TNC_DEFAULT_VERSION;
+            request.getSession().setAttribute("termVersion",termVersion);
+        }
+		
+		
+		
+		ralDetailVO.setTcVersionNo(StringUtils.isNotBlank(request.getSession().getAttribute("termVersion").toString())?request.getSession().getAttribute("termVersion").toString():CommonConstant.IBNK_TNC_DEFAULT_VERSION);
+        
+
+
+	CustomerVO.hbm.xml
+	
+	        <!-- T&C required for SCBCIF. TBL_CUST_SERV -->
+        <property name="tcVersionNo" type="string" column="TC_VERSION_NO"/>
+        <property name="tcAcceptedTime" type="timestamp" column="TC_ACCEPTED_TIME"/>
+        <property name="isTCAccepted" type="string" column="TC_ACCEPTED_FLAG"/>
+		
+		
+	UserVO.hbm.xml
+	
+	        <!-- T&C required for SCBCIF. TBL_CUST_SERV -->
+        <property name="tcAcceptedTime" type="timestamp" column="TC_ACCEPTED_TIME"/>
+        <property name="tcVersionNo" type="string" column="TC_VERSION_NO"/>
+        <property name="isTCAccepted" type="string" column="TC_ACCEPTED_FLAG"/>
