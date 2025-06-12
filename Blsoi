@@ -1,67 +1,159 @@
-package com.scb.bsoi.tnc.delegate;
+package com.scb.bsoi.base.delegate;
 
-import com.scb.bsoi.base.delegate.BaseBSOIDelegate;
-import com.scb.common.context.request.TnCRequest;
-import com.scb.common.context.response.TnCResponse;
-import com.scb.vo.CustomerVO;
-import com.scb.vo.TnCVO;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class TnCDelegate extends BaseBSOIDelegate {
+import org.apache.commons.lang.StringUtils;
 
-    public TnCVO getTnC(CustomerVO customerVO) {
-        TnCRequest request = makeRequest(TnCRequest.class, customerVO);
-        TnCResponse response = getSsTnCService().getTnC(request);
-        checkResponseStatus(response);
-        return response.getTncVO();
+import org.dozer.Mapper;
+import com.scb.bsoi.accounts.helper.ProductMatcher;
+import com.scb.bsoi.accounts.vo.ProductVO;
+import com.scb.bsoi.common.bo.CommonBO;
+import com.scb.bsoi.common.cache.PayeeCache;
+import com.scb.bsoi.common.cache.ProductCache;
+import com.scb.bsoi.common.cache.SessionCache;
+import com.scb.bsoi.common.exception.BSOIException;
+import com.scb.bsoi.context.BSOIContext;
+import com.scb.nfs.base.util.config.PropertyEntryConfigurer;
+import com.scb.nfs.base.util.dozer.DataMapperContainer;
+import com.scb.nfs.base.util.logger.Logger;
+import com.scb.ss.common.vo.accounts.Product;
+import com.scb.ss.common.vo.customer.Customer;
+
+public class BaseBSOIDelegate implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    protected Logger logger = Logger.getLogger(this.getClass());
+
+    private PropertyEntryConfigurer configManager;
+
+    private DataMapperContainer container;
+
+    private SessionCache sessionCache;
+
+    private ProductCache productCache;
+
+    protected PayeeCache payeeCache;
+
+    protected CommonBO commonBO;
+    
+    private Map<String, ProductMatcher> productMatchers = new HashMap<String, ProductMatcher>();
+
+    public void setProductMatchers(Map<String, ProductMatcher> productMatchers) {
+        this.productMatchers = productMatchers;
     }
 
-    public void updateTnC(CustomerVO customerVO) {
-        TnCRequest request = makeRequest(TnCRequest.class, customerVO);
-        getSsTnCService().updateTnC(request);
-        // Optional: check response status if required
+    public String getProductKey(Product product){
+        return productMatchers.get(BSOIContext.getCountry()).getProductKey(product);
     }
-}
-
-
-package com.scb.bsoi.tnc.endpoint.implementation;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-
-import com.scb.bsoi.tnc.delegate.TnCDelegate;
-import com.scb.common.context.request.TnCRequest;
-import com.scb.common.context.response.TnCResponse;
-import com.scb.vo.CustomerVO;
-
-@Path("/tnc")
-public class TnCEndpoint {
-
-    private TnCDelegate tncDelegate;
-
-    public void setTncDelegate(TnCDelegate tncDelegate) {
-        this.tncDelegate = tncDelegate;
+    
+    public String getProductKey(ProductVO productVO){
+        return productMatchers.get(BSOIContext.getCountry()).getProductKey(productVO);
+    }
+    
+    public PayeeCache getPayeeCache() {
+        return payeeCache;
     }
 
-    @POST
-    @Path("/get")
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
-    public TnCResponse getTnC(TnCRequest request) {
-        CustomerVO customerVO = request.getCustomerVO();
-        TnCResponse response = new TnCResponse();
-        response.setTncVO(tncDelegate.getTnC(customerVO));
-        return response;
+    public void setPayeeCache(PayeeCache payeeCache) {
+        this.payeeCache = payeeCache;
     }
 
-    @POST
-    @Path("/update")
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
-    public TnCResponse updateTnC(TnCRequest request) {
-        CustomerVO customerVO = request.getCustomerVO();
-        tncDelegate.updateTnC(customerVO);
-        TnCResponse response = new TnCResponse();
-        response.setSuccess(true);
-        return response;
+    public ProductCache getProductCache() {
+        return productCache;
+    }
+
+    public void setProductCache(ProductCache productCache) {
+        this.productCache = productCache;
+    }
+
+    public void setContainer(DataMapperContainer container) {
+        this.container = container;
+    }
+
+    private Mapper getDataMapper() {
+        return container.getMapper(BSOIContext.getCountry());
+    }
+
+    protected <T> T convert(Object source, Class<T> t) {
+        Mapper mapper = getDataMapper();
+        if(source == null){
+            return null;
+        }
+        return mapper.map(source, t);
+    }
+
+    @SuppressWarnings("rawtypes")
+    protected <T> List<T> convert(List sl, Class<T> t) {
+        if (sl == null) {
+            return null;
+        }
+        Mapper mapper = getDataMapper();
+        List<T> tl = new ArrayList<T>();
+        for (Object s : sl) {
+            tl.add(mapper.map(s, t));
+        }
+        return tl;
+    }
+
+    public PropertyEntryConfigurer getConfigManager() {
+        return configManager;
+    }
+
+    public void setConfigManager(PropertyEntryConfigurer configManager) {
+        this.configManager = configManager;
+    }
+
+    public SessionCache getSessionCache() {
+        return sessionCache;
+    }
+
+    public void setSessionCache(SessionCache sessionCache) {
+        this.sessionCache = sessionCache;
+    }
+
+    protected Customer getCustomerFromSession() {
+        logger.debug("getCustomerFromSession: customer is " + (sessionCache.getCustomer() == null ? "is null" : "is not null"));
+        return sessionCache.getCustomer();
+    }
+    
+    protected String getSasRequestIdFromSession() {
+        logger.debug("getSasRequestIdFromSession: customer is " + ((sessionCache.getAuthorization()!=null?sessionCache.getAuthorization().getSasId():null) == null ? "is null" : "is not null"));
+        return sessionCache.getAuthorization()!=null?sessionCache.getAuthorization().getSasId():null;
+    }
+
+    protected void invalidateProductCache() {
+        productCache.invalidate();
+    }
+    
+    protected void invalidatePayeeCache() {
+        payeeCache.invalidate();
+    }
+
+    protected void setCustomerToSession(Customer customer) {
+        sessionCache.setCustomer(customer);
+        productCache.setCustomer(customer);
+        payeeCache.setCustomer(customer);
+    }
+
+    public void setCommonBO(CommonBO commonBO) {
+        this.commonBO = commonBO;
+    }
+    
+    protected Map<String, String> getAccountDescMap() throws BSOIException{
+        Map<String, String> acctDescMap = new HashMap<String, String>();
+        List<Product> products = productCache.getProducts();
+        for (Product product : products) {
+            if(StringUtils.isBlank(product.getAccountNickName())){
+                acctDescMap.put(getProductKey(product), product.getAccountDescription());   
+            } else {
+                acctDescMap.put(getProductKey(product), product.getAccountNickName());
+            }
+        }
+        return acctDescMap;
     }
 }
