@@ -72,3 +72,44 @@ public class TnCDelegate extends BaseBSOIDelegate {
         this.customerBO = customerBO;
     }
 }
+
+
+package com.scb.bsoi.tnc.endpoint.implementation;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import com.scb.ss.common.context.tnc.request.TnCRequest;
+import com.scb.ss.common.context.tnc.response.TnCResponse;
+import com.scb.bsoi.tnc.delegate.TnCDelegate;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+@Path("/tnc")
+public class TnCEndpointImpl {
+
+    @Autowired
+    private TnCDelegate tncDelegate;
+
+    @POST
+    @Path("/update")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML)
+    public TnCResponse updateTermsAndConditions(TnCRequest request) {
+        return tncDelegate.updateTnC(request);
+    }
+
+    @POST
+    @Path("/get")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML)
+    public TnCResponse getTermsAndConditions(TnCRequest request) {
+        return tncDelegate.getTnC(request);
+    }
+}
+
