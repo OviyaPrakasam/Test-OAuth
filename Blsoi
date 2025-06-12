@@ -1,3 +1,35 @@
+// Used for POST /tnc/prelogin
+    public TnCResponse getTnCStatus(TnCRequest request) {
+        TnCResponse response = new TnCResponse();
+        try {
+            CustomerVO reqVO = request.getCustomerVO();
+            CustomerVO dbVO = customerBO.getCustomerInfo(reqVO); // fetch from DB
+            String latestTcVersion = StringUtils.defaultIfBlank(request.getTcVersion(), "1.0");
+
+            response.setTcVersion(latestTcVersion);
+            response.setCustomerVO(dbVO);
+
+            // Check T&C acceptance
+            if (StringUtils.isNotBlank(latestTcVersion) &&
+                (StringUtils.isBlank(dbVO.getIsTCAccepted())
+                || "N".equalsIgnoreCase(dbVO.getIsTCAccepted())
+                || !latestTcVersion.equalsIgnoreCase(dbVO.getTcVersionNo()))) {
+                response.setTcFlagEnable("Y");
+            } else {
+                response.setTcFlagEnable("N");
+            }
+
+            response.setStatus("SUCCESS");
+
+        } catch (Exception e) {
+            logger.error("Error in getTnCStatus", e);
+            response.setStatus("FAILURE");
+        }
+        return response;
+    }
+
+
+
 package com.scb.bsoi.tnc.delegate;
 
 import com.scb.foa.bo.CustomerBO;
