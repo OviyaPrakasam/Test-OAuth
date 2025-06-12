@@ -1,53 +1,67 @@
-package com.scb.ss.tnc.service.impl;
+package com.scb.bsoi.tnc.delegate;
 
-import com.scb.foa.customer.CustomerBO;
-import com.scb.foa.customer.vo.CustomerVO;
-import com.scb.ss.tnc.service.TnCService;
-import com.scb.ss.context.tnc.TnCStatusRequest;
-import com.scb.ss.context.tnc.TnCStatusResponse;
+import com.scb.bsoi.base.delegate.BaseBSOIDelegate;
+import com.scb.common.context.request.TnCRequest;
+import com.scb.common.context.response.TnCResponse;
+import com.scb.vo.CustomerVO;
+import com.scb.vo.TnCVO;
 
-import java.util.Date;
+public class TnCDelegate extends BaseBSOIDelegate {
 
-public class TnCServiceImpl implements TnCService {
-
-    private CustomerBO customerBO;
-
-    public void setCustomerBO(CustomerBO customerBO) {
-        this.customerBO = customerBO;
+    public TnCVO getTnC(CustomerVO customerVO) {
+        TnCRequest request = makeRequest(TnCRequest.class, customerVO);
+        TnCResponse response = getSsTnCService().getTnC(request);
+        checkResponseStatus(response);
+        return response.getTncVO();
     }
 
-    @Override
-    public TnCStatusResponse checkTnCRequired(TnCStatusRequest request) {
-        CustomerVO customerVO = new CustomerVO();
-        customerVO.setCustomerId(request.getCustomerId());
+    public void updateTnC(CustomerVO customerVO) {
+        TnCRequest request = makeRequest(TnCRequest.class, customerVO);
+        getSsTnCService().updateTnC(request);
+        // Optional: check response status if required
+    }
+}
 
-        CustomerVO resultVO = customerBO.getCustomerInfo(customerVO);
 
-        TnCStatusResponse response = new TnCStatusResponse();
-        response.setCustomerId(resultVO.getCustomerId());
-        response.setTncAccepted(resultVO.getIsTCAccepted());
-        response.setTncVersion(resultVO.getTcVersionNo());
-        response.setTncAcceptedTime(resultVO.getTcAcceptedTime());
+package com.scb.bsoi.tnc.endpoint.implementation;
 
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+
+import com.scb.bsoi.tnc.delegate.TnCDelegate;
+import com.scb.common.context.request.TnCRequest;
+import com.scb.common.context.response.TnCResponse;
+import com.scb.vo.CustomerVO;
+
+@Path("/tnc")
+public class TnCEndpoint {
+
+    private TnCDelegate tncDelegate;
+
+    public void setTncDelegate(TnCDelegate tncDelegate) {
+        this.tncDelegate = tncDelegate;
+    }
+
+    @POST
+    @Path("/get")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML)
+    public TnCResponse getTnC(TnCRequest request) {
+        CustomerVO customerVO = request.getCustomerVO();
+        TnCResponse response = new TnCResponse();
+        response.setTncVO(tncDelegate.getTnC(customerVO));
         return response;
     }
 
-    @Override
-    public TnCStatusResponse updateTnCStatus(TnCStatusRequest request) {
-        CustomerVO customerVO = new CustomerVO();
-        customerVO.setCustomerId(request.getCustomerId());
-        customerVO.setTcVersionNo(request.getTncVersion());
-        customerVO.setIsTCAccepted("Y");
-        customerVO.setTcAcceptedTime(new Date());
-
-        customerBO.updateTermsAndCondition(customerVO);
-
-        TnCStatusResponse response = new TnCStatusResponse();
-        response.setCustomerId(customerVO.getCustomerId());
-        response.setTncAccepted("Y");
-        response.setTncVersion(customerVO.getTcVersionNo());
-        response.setTncAcceptedTime(customerVO.getTcAcceptedTime());
-
+    @POST
+    @Path("/update")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML)
+    public TnCResponse updateTnC(TnCRequest request) {
+        CustomerVO customerVO = request.getCustomerVO();
+        tncDelegate.updateTnC(customerVO);
+        TnCResponse response = new TnCResponse();
+        response.setSuccess(true);
         return response;
     }
 }
