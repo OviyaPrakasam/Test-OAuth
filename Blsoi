@@ -331,3 +331,27 @@ query the DB by using BSOI,  and return the customer's info(accepted version and
 app fetch this follow link: https://av.sc.com/hk/data/sc-mobile/terms/all.json, you can get the accepted version for current user.
 at this moment, you can compared the latest version and the accpeted version. you can judge them to show the policy or not
 	
+@Override
+public CustomerVO getCustomerVOFromDB(CustomerVO inputVO) {
+    CustomerVO outputVO = new CustomerVO();
+
+    try {
+        // 1. Prepare request map for process
+        Map<String, Object> inputMap = new HashMap<>();
+        inputMap.put(ProcessConstants.CUSTOMER_VO, inputVO); // Put input VO with customerId
+
+        // 2. Invoke process layer to get T&C info
+        Object result = processEngine.execute("getCustomerInfoTnCFlow", inputMap);
+
+        // 3. Check result type and map back to CustomerVO
+        if (result instanceof CustomerVO) {
+            outputVO = (CustomerVO) result;
+        } else {
+            logger.warn("Unexpected result from process: " + result);
+        }
+    } catch (Exception e) {
+        logger.error("Error fetching CustomerVO for T&C from DB", e);
+    }
+
+    return outputVO;
+}
