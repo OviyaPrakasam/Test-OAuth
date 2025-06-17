@@ -1,115 +1,296 @@
-// Used for POST /tnc/prelogin
-    public TnCResponse getTnCStatus(TnCRequest request) {
-        TnCResponse response = new TnCResponse();
-        try {
-            CustomerVO reqVO = request.getCustomerVO();
-            CustomerVO dbVO = customerBO.getCustomerInfo(reqVO); // fetch from DB
-            String latestTcVersion = StringUtils.defaultIfBlank(request.getTcVersion(), "1.0");
+FOA - Spring + Jsp (MVC) - Web front +backend
 
-            response.setTcVersion(latestTcVersion);
-            response.setCustomerVO(dbVO);
+BSOI - Backend for mobile app:
 
-            // Check T&C acceptance
-            if (StringUtils.isNotBlank(latestTcVersion) &&
-                (StringUtils.isBlank(dbVO.getIsTCAccepted())
-                || "N".equalsIgnoreCase(dbVO.getIsTCAccepted())
-                || !latestTcVersion.equalsIgnoreCase(dbVO.getTcVersionNo()))) {
-                response.setTcFlagEnable("Y");
-            } else {
-                response.setTcFlagEnable("N");
-            }
+- Need to integrate FOA changes in BSOI. FOA latest jar version with TnC changes are already kept and done below implementation.
 
-            response.setStatus("SUCCESS");
 
-        } catch (Exception e) {
-            logger.error("Error in getTnCStatus", e);
-            response.setStatus("FAILURE");
-        }
-        return response;
+
+
+package com.scb.bsoi.common.endpoint.request;
+
+import com.scb.bsoi.base.endpoint.request.BaseBSOIRequest;
+import com.scb.nfs.ibank.customer.vo.CustomerVO;
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "TNCVersionsRequest")
+public class TNCVersionsRequest extends BaseBSOIRequest {
+    private CustomerVO customerVO;
+
+    public CustomerVO getCustomerVO() {
+        return customerVO;
     }
 
+    public void setCustomerVO(CustomerVO customerVO) {
+        this.customerVO = customerVO;
+    }
+}
 
 
-package com.scb.bsoi.tnc.delegate;
+package com.scb.bsoi.common.endpoint.response;
 
-import com.scb.foa.bo.CustomerBO;
-import com.scb.foa.vo.CustomerVO;
-import com.scb.ss.common.context.tnc.request.TnCRequest;
-import com.scb.ss.common.context.tnc.response.TnCResponse;
-import com.scb.bsoi.base.delegate.BaseBSOIDelegate;
+import com.scb.bsoi.base.endpoint.request.BaseBSOIRequest;
+import com.scb.bsoi.base.endpoint.response.BaseBSOIResponse;
+import com.scb.nfs.ibank.customer.vo.CustomerVO;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "TNCVersionsResponse")
+public class TNCVersionsResponse extends BaseBSOIResponse {
+    private CustomerVO acceptedTNCVersions;
+
+    public CustomerVO getAcceptedTNCVersions() {
+        return acceptedTNCVersions;
+    }
+
+    public void setAcceptedTNCVersions(CustomerVO acceptedTNCVersions) {
+        this.acceptedTNCVersions = acceptedTNCVersions;
+    }
+}
+
+
+package com.scb.ss.context.common;
+
+import com.scb.nfs.ibank.customer.vo.CustomerVO;
+import com.scb.ss.context.BaseSSResponse;
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
+public class TnCDataResponse extends BaseSSResponse {
+
+    CustomerVO customerVO;
+
+    public CustomerVO getCustomerVO() {
+        return customerVO;
+    }
+
+    public void setCustomerVO(CustomerVO customerVO) {
+        this.customerVO = customerVO;
+    }
+}
+
+
+package com.scb.ss.context.common;
+
+import com.scb.nfs.ibank.customer.vo.CustomerVO;
+import com.scb.ss.context.BaseSSRequest;
+
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 
-public class TnCDelegate extends BaseBSOIDelegate {
+@XmlRootElement
+public class TnCDataRequest extends BaseSSRequest {
+    CustomerVO customerVO;
+    private String tcVersionNo;
+    private Date tcAcceptedTime;
+    private String isTCAccepted;
 
-    private CustomerBO customerBO;
+    public CustomerVO getCustomerVO() {
+        return customerVO;
+    }
 
-    public TnCResponse updateTnCStatus(TnCRequest request) {
-        CustomerVO customerVO = new CustomerVO();
-        customerVO.setId(request.getCustomerId());
-        customerVO.setIsTCAccepted(request.getIsTCAccepted());
-        customerVO.setTcVersionNo(request.getTcVersionNo());
-        customerVO.setTcAcceptedTime(request.getTcAcceptedTime() != null ? request.getTcAcceptedTime() : new Date());
+    public void setCustomerVO(CustomerVO customerVO) {
+        this.customerVO = customerVO;
+    }
 
-        try {
-            customerBO.updateTermsAndCondition(customerVO);
-        } catch (Exception e) {
-            logError("Error in updateTnCStatus", e);
-            throw new RuntimeException("Unable to update T&C", e);
+    public String getTcVersionNo() {
+        return tcVersionNo;
+    }
+
+    public void setTcVersionNo(String tcVersionNo) {
+        this.tcVersionNo = tcVersionNo;
+    }
+
+    public Date getTcAcceptedTime() {
+        return tcAcceptedTime;
+    }
+
+    public void setTcAcceptedTime(Date tcAcceptedTime) {
+        this.tcAcceptedTime = tcAcceptedTime;
+    }
+
+    public String getIsTCAccepted() {
+        return isTCAccepted;
+    }
+
+    public void setIsTCAccepted(String isTCAccepted) {
+        this.isTCAccepted = isTCAccepted;
+    }
+}
+
+
+package com.scb.ss.common.handler;
+
+import com.scb.nfs.ibank.customer.vo.CustomerVO;
+import com.scb.ss.exception.SSBusinessException;
+import com.scb.ss.integration.service.customer.impl.HKCustomerService;
+import com.scb.ss.process.Response;
+import com.scb.ss.process.context.DataContext;
+import com.scb.ss.process.context.ProcessContext;
+import com.scb.ss.process.exception.ErrorCode;
+import com.scb.ss.process.exception.ProcessException;
+import com.solacesystems.jcsmp.protocol.smf.SSLSmfClient;
+
+public class SSGetTnCHandler extends SSBaseHandler{
+
+    HKCustomerService hkCustomerService;
+
+    @Override
+    protected Response innerHandle(ProcessContext context) throws SSBusinessException {
+        CustomerVO inputVO = (CustomerVO) context.getValue("SS_SYS_PARAM");
+        if (inputVO == null || inputVO.getId() == null) {
+            throw new ProcessException(ErrorCode.PROCESS_NOT_FOUND);
         }
+        CustomerVO newCustomerVO = hkCustomerService.getCustomerVOFromDB(inputVO);
+        DataContext dataContext = new DataContext();
+        dataContext.setValue("customerVO", newCustomerVO);
+        return Response.getSuccessResponse(dataContext);
+    }
+}
 
-        TnCResponse response = new TnCResponse();
-        response.setCustomerId(customerVO.getId());
-        response.setIsTCAccepted(customerVO.getIsTCAccepted());
-        response.setTcVersionNo(customerVO.getTcVersionNo());
-        response.setTcAcceptedTime(customerVO.getTcAcceptedTime());
 
+
+CommonBO.Java  interface class:
+
+	public CustomerVO getAcceptedTNCVersions() throws BSOIException;
+	public TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId);
+
+
+CommonBOImplementation:
+
+    @Override
+    public CustomerVO getAcceptedTNCVersions() {
+        try {
+            return commonService.getAcceptedTNCVersions();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+	
+	    @Override
+    public TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId) {
+        return null;
+    }
+	
+	
+CommonDelegate:
+
+
+    public CustomerVO getAcceptedTNCVersions() throws BSOIException;
+
+    public TransactionResultResponse doAcceptTNC(TNCVersionsRequest request, HttpServletRequest httpServletRequest) throws BSOIException;
+
+
+CommonDelegateImpl:
+
+    @Override
+    public CustomerVO getAcceptedTNCVersions() throws BSOIException {
+        CustomerVO acceptedTNCVersions = commonBO.getAcceptedTNCVersions();
+        return acceptedTNCVersions;
+    }
+
+    @Override
+    public TransactionResultResponse doAcceptTNC(TNCVersionsRequest request, HttpServletRequest httpServletRequest) throws BSOIException {
+        return null;
+    }
+
+
+CommonService:
+	public CustomerVO getAcceptedTNCVersions() throws BSOIException;
+	public TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId) throws BSOIException;
+
+
+CommonServiceImpl:
+
+
+    @Override
+    public CustomerVO getAcceptedTNCVersions() throws BSOIException {
+        TnCDataRequest request = makeRequest(TnCDataRequest.class, null);
+        TnCDataResponse tncVersionsResponse = ssCommonService.getAcceptedTnCVersions(request);
+        return tncVersionsResponse.getCustomerVO();
+    }
+
+    @Override
+    public TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId) throws BSOIException {
+        return null;
+    }
+
+
+CommonEndpoint:
+
+
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/acceptedTNCVersions")
+    public TNCVersionsResponse getAcceptedTNCVersions(TNCVersionsRequest tncVersionsRequest) {
+        TNCVersionsResponse tncVersionsResponse = new TNCVersionsResponse();
+        try {
+            CustomerVO versionList = commonDelegate.getAcceptedTNCVersions();
+            tncVersionsResponse.setAcceptedTNCVersions(versionList);
+        } catch (Exception e) {
+            handleException(tncVersionsRequest, tncVersionsResponse, e);
+        }
+        return tncVersionsResponse;
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/doAcceptTNC")
+    public TransactionResultResponse doAcceptTNC(TNCVersionsRequest request) {
+        return null;
+    }
+	
+CustomerService Impl:
+
+    public CustomerVO getCustomerVOFromDB(CustomerVO inputVO) throws Exception;
+
+HKCustomerService
+
+    @Override
+    public CustomerVO getCustomerVOFromDB(CustomerVO inputVO) throws ProcessException {
+        try{
+            return customerBO.getCustomerInfo(inputVO);
+        } catch (ProcessException | BusinessException e) {
+            throw new ProcessException("Unable to find Customer" + e, ErrorCode.PROCESS_NOT_FOUND);
+        }
+    }
+
+
+
+ProcessConstants:
+
+	public static final String PROCESS_GET_TNC_ACCEPTED_VERSIONS = "getTnCAcceptedVersions";
+	public static final String PROCESS_DO_TNC_ACCEPT = "doUpdateTnCAccept";
+	
+SSCommonService.java
+
+
+	TnCDataResponse getAcceptedTnCVersions(TnCDataRequest tncRequest);
+	TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId);
+
+SSCommonServiceImpl.java
+
+
+	@Override
+	public TnCDataResponse getAcceptedTnCVersions(TnCDataRequest tncRequest) {
+		ProcessContext context = createProcessContextWithUserContext(tncRequest, null);
+		context.setValue(CommonServiceConstants.SS_SYS_PARAM, tncRequest.getCustomerVO());
+		Response<Object> resp = executeProcess(tncRequest.getHeader(), context,
+				ProcessConstants.PROCESS_GET_TNC_ACCEPTED_VERSIONS);
+		TnCDataResponse response = new TnCDataResponse();
+		handleProcessResult(response.getResponse(), resp, context);
+		CustomerVO customerVO = response.getCustomerVO();
+		response.setCustomerVO(customerVO);
         return response;
     }
 
-    // Inject BO
-    public void setCustomerBO(CustomerBO customerBO) {
-        this.customerBO = customerBO;
-    }
-}
-
-
-package com.scb.bsoi.tnc.endpoint.implementation;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
-import com.scb.ss.common.context.tnc.request.TnCRequest;
-import com.scb.ss.common.context.tnc.response.TnCResponse;
-import com.scb.bsoi.tnc.delegate.TnCDelegate;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-@Component
-@Path("/tnc")
-public class TnCEndpointImpl {
-
-    @Autowired
-    private TnCDelegate tncDelegate;
-
-    @POST
-    @Path("/update")
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
-    public TnCResponse updateTermsAndConditions(TnCRequest request) {
-        return tncDelegate.updateTnC(request);
-    }
-
-    @POST
-    @Path("/get")
-    @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
-    public TnCResponse getTermsAndConditions(TnCRequest request) {
-        return tncDelegate.getTnC(request);
-    }
-}
-
+	@Override
+	public TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId) {
+		return null;
+	}
+	
+	
