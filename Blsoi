@@ -355,3 +355,44 @@ public CustomerVO getCustomerVOFromDB(CustomerVO inputVO) {
 
     return outputVO;
 }
+
+package com.scb.ss.common;
+
+public class ProcessConstants {
+
+    // Used in ProcessContext to set/get the input VO
+    public static final String SS_SYS_PARAM = "SS_SYS_PARAM";
+
+    // Used to trigger the process flow that returns CustomerVO with TnC fields
+    public static final String PROCESS_GET_CUSTOMER_VO_FROM_DB = "getCustomerVOFromDB";
+
+    // Already present in your existing file
+    public static final String PROCESS_GET_TNC_ACCEPTED_VERSIONS = "getTnCAcceptedVersions";
+    public static final String PROCESS_DO_TNC_ACCEPT = "doUpdateTnCAccept";
+}
+
+
+@Override
+public CustomerVO getCustomerVOFromDB(CustomerVO inputVO) {
+    CustomerVO outputVO = null;
+    try {
+        // 1. Create process context and inject input VO
+        ProcessContext context = new ProcessContext();
+        context.setValue(ProcessConstants.SS_SYS_PARAM, inputVO);
+
+        // 2. Execute process flow using process constant key
+        Response<Object> response = executeProcess(null, context, ProcessConstants.PROCESS_GET_CUSTOMER_VO_FROM_DB);
+
+        // 3. Handle response and extract CustomerVO
+        if (response != null && response.isSuccess()) {
+            DataContext dataContext = (DataContext) response.getData();
+            outputVO = (CustomerVO) dataContext.getValue("customerVO");
+        } else {
+            logger.warn("Failed to fetch customer VO from DB. Response: " + response);
+        }
+
+    } catch (Exception e) {
+        logger.error("Error occurred while fetching CustomerVO from DB", e);
+    }
+    return outputVO;
+}
