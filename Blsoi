@@ -292,5 +292,42 @@ SSCommonServiceImpl.java
 	public TransactionResultResponse doAcceptTNC(TnCDataRequest request, String sessionId) {
 		return null;
 	}
-	
+
+
+Changes 16 files
+
+CommonBO.java bsoi\src\main\java\com\scb\bsoi\common\bo 
+CommonBOImpl.java bsoi\src\main\java\com\scb\bsoi\common\bo\impl 
+CommonDelegate.java bsoi\src\main\java\com\scb\bsoi\common\delegate 
+CommonDelegateImpl.java bsoi\src\main\java\com\scb\bsoi\common\delegate\impl 
+CommonEndpointImpl.java bsoi\src\main\java\com\scb\bsoi\common\endpoint\impl 
+CommonService.java bsoi\src\main\java\com\scb\bsoi\common\service 
+CommonServicelmpl.java bsoi\src\main\java\com\scb\bsoi\common\service\impl
+CustomerService.java shared-service\src\main\java\com\scb\ss\integration\service\customer 
+HKCustomerService.java ss-bmwhk\src\main\java\com\scb\ss\integration\service\customer\implm
+pom.xml
+process-common-flow.xml nfs-app-hk-bsoi-web\src\main\resources\config\process 
+ProcessConstants.java shared-service\src\main\java\com\scb\ss\common 
+ss-common-context.xml nfs-app-hk-bsoi-web\src\main\webapp\WEB-INF\spring_shared_service 
+SSBaseHandler.java shared-service\src\main\java\com\scb\ss\common\handler 
+SSCommonService.java ss-api\src\main\java\com\scb\ss\common\service
+SSCommonServicelmpl.java shared-service\src\main\java\com\scb\ss\common\service\impl 
+
+Unversioned Files 6 files
+
+SSdoAcceptTnCHandler.java shared-service\src\main\java\com\scb\ss\common\handler
+SSGetTnCHandler.java shared-service\src\main\java\com\scb\ss\common\handler 
+TnCDataRequest.java ss-common\src\main\java\com\scb\ss\context\common
+TnCDataResponse.java ss-common\src\main\java\com\scb\ss\context\common
+TNCVersionsRequest.java bsoi/src/main/java/com/scb/bsoi/common/endpoint/request/
+TNCVersionsResponse.java  bsoi/src/main/java/com/scb/bsoi/common/endpoint/response/
+
+
+for the fetch function, they do all the logic at the controller level. you could not use the same logic...
+you better rewrite the logic for this.
+ 
+for example
+query the DB by using BSOI,  and return the customer's info(accepted version and IsTCAccepted value) to app side
+app fetch this follow link: https://av.sc.com/hk/data/sc-mobile/terms/all.json, you can get the accepted version for current user.
+at this moment, you can compared the latest version and the accpeted version. you can judge them to show the policy or not
 	
