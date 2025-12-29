@@ -1,0 +1,506 @@
+Microsoft Ethical AI & Copilot Exam Cheat Sheet
+GitHub Copilot Exam Cheat Sheet (Q26–Q50)
+
+1. Microsoft Ethical AI Principles
+	• Fairness ensures AI treats all people equally.
+Key: “Fair = Equal treatment.”
+2. Minimizing Bias in AI
+	• Use diverse data, fairness metrics, and human oversight.
+Key: “Diversity + Metrics + Humans = Less Bias.”
+3. Gen AI Code Security
+	• Prevents unauthorized access/data breaches.
+Key: “Security = No breaches.”
+4. Transparency in AI Filtering
+	• Explain what & how AI filters content.
+Key: “Explain filtering logic.”
+5. /optimize Slash Command in VS Code
+	• Enhances code performance by analyzing runtime complexity.
+Key: “Optimize = Performance boost.”
+6. Copilot for Azure DevOps
+	• No Enterprise license needed.
+Key: “Azure DevOps = No Enterprise.”
+7. Copilot Business Policy Setup
+	• Configure in organization settings.
+Key: “Org settings = Policy control.”
+8. Copilot Business REST API Info (Choose 2)
+	• List seat assignments, usage summary.
+Key: “Seats & Usage.”
+9. Copilot Chat Feedback (GitHub Mobile)
+	• Use emojis in chat interface.
+Key: “Emoji = Feedback.”
+10. /fix Slash Command
+	• Suggests corrections for code issues.
+Key: “Fix = Suggest corrections.”
+11. Copilot Data Exclusion Plans (Choose 2)
+	• Business & Enterprise plans.
+Key: “B & E = Data excluded.”
+12. Copilot Chat Features in IDE (Choose 2)
+	• Explain code, generate unit tests.
+Key: “Explain + Unit tests.”
+13. Copilot Enterprise Features in IDEs
+	• Inline suggestions.
+Key: “Inline = Everywhere.”
+14. Duplicate Detection Config (Choose 2)
+	• Org & Enterprise settings.
+Key: “Org/Enterprise = Duplicate control.”
+15. Copilot Usage Metrics API Insights (Choose 2)
+	• Track accepted suggestions, chat metrics.
+Key: “Accepted & Chat metrics.”
+16. Copilot CLI Code Suggestions
+	• Use ‘gh copilot suggest’.
+Key: “gh copilot suggest = CLI.”
+17. Code Suggestions Facts (Choose 2)
+	• Accept next word, see alternatives in new tab.
+Key: “Next word + New tab.”
+18. Why Code Suggestions May Not Work (Choose 3)
+	• No internet, unsupported language, no license.
+Key: “Internet, Language, License.”
+19. Metrics API for Dev Process (Choose 2)
+	• Analyze suggestions vs manual, language insights.
+Key: “Manual vs Copilot, Language help.”
+20. Copilot Chat Feedback in IDE
+	• Share Feedback button in chat panel.
+Key: “Share Feedback button.”
+21. Copilot CLI Configurable Settings (Choose 2)
+	• Usage analytics, execution confirmation.
+Key: “Analytics + Confirmation.”
+22. Copilot Knowledge Base Content (Choose 3)
+	• Code snippets, design patterns, documentation.
+Key: “Code, Patterns, Docs.”
+23. Copilot Individual for Open Source
+	• Free for open source.
+Key: “Open source = Free.”
+24. Copilot Business Audit Logs
+	• Monitor admin activities.
+Key: “Audit = Admin actions.”
+25. Copilot Training on Common Patterns
+	• Suggests common code snippets.
+Key: “Common patterns = Common suggestions.”
+
+Exam Hacking Notes:
+	• Look for keywords: “Fairness,” “Diversity,” “Security,” “Explain,” “Optimize,” “Policy,” “Seats,” “Emoji,” “Fix,” “Business/Enterprise,” “Inline,” “Duplicate,” “Metrics,” “Suggest,” “Next word,” “Internet,” “Manual,” “Feedback,” “Analytics,” “Code/Patterns/Docs,” “Free,” “Audit,” “Common.”
+	• If asked about settings, policies, or features, think “organization/enterprise” for control and “inline” for universal features.
+	• For feedback, look for “emoji” or “Share Feedback button.”
+	• For exclusions, “Business” and “Enterprise” plans.
+	• For CLI, “gh copilot suggest.”
+	• For open source, “free.”
+
+Memorize the keys and you’ll be ready for quick recall in your exam!
+
+GitHub Copilot Exam Cheat Sheet (Q26–Q50)
+
+26. Deprecated Features Handling
+	• Copilot updates deprecated features in suggestions to the latest version.
+		○ Key: “Copilot = Always Up-to-date.”
+27. Copilot Code Suggestion Life Cycle (Choose 2)
+	• Generate suggestions, Capture user’s context.
+		○ Key: “Context + Suggestion = Life cycle.”
+28. Pre-processing User Input in Copilot Chat
+	• Enriches input prompt before sending to language model.
+		○ Key: “Pre-process = Enrich prompt.”
+29. Checks Before Submitting Copilot Responses (Choose 2)
+	• Code quality, Suggestions matching public code.
+		○ Key: “Quality + Public code check.”
+30. Copilot Chat Limitations (Choose 2)
+	• Handling complex code, Limited training data.
+		○ Key: “Complexity + Data limits.”
+31. Fill-In-the-Middle (FIM) Impact
+	• Considers both prefix and suffix for better suggestions.
+		○ Key: “FIM = Prefix + Suffix.”
+32. Copilot Individual Prompt Data (Choose 2)
+	• Real-time input = context-aware, Prompt data trains models.
+		○ Key: “Context-aware + Model training.”
+33. IDE Prompt Context Source
+	• Info from IDE: open tabs, cursor, selected code.
+		○ Key: “IDE info = Context.”
+34. LLM Context Source
+	• Neighboring/related files in project.
+		○ Key: “Related files = Context.”
+35. Custom Models Benefit
+	• Uses practices/patterns in your repos.
+		○ Key: “Custom = Your patterns.”
+36. Matching Code/Public Code Handling (Choose 2)
+	• Implements safeguards, Filters verbatim public code.
+		○ Key: “Safeguard + Filter public.”
+37. Chat History for Completion
+	• Personalizes snippets based on previous prompts.
+		○ Key: “History = Personalized code.”
+38. Duplication Detection Filter Purpose
+	• Blocks suggestions matching public code >150 chars.
+		○ Key: “Block long public matches.”
+39. Prompt Crafting for Relevance
+	• Provide examples of input/output.
+		○ Key: “Examples = Better relevance.”
+40. Zero-shot Prompting
+	• Only question, no examples.
+		○ Key: “Zero-shot = No examples.”
+45. Code Quality Practice
+	• Review and refactor Copilot’s code.
+		○ Key: “Review + Refactor.”
+46. Copilot in SDLC Design Phase
+	• Suggests design patterns/best practices.
+		○ Key: “Design = Patterns/Best practices.”
+47. Refactoring Limitation
+	• May not produce best-practice code.
+		○ Key: “Not always best-practice.”
+48. Minimizing Context Switching
+	• Allows devs to stay in IDE.
+		○ Key: “Stay in IDE.”
+49. Limitation in Large Codebases
+	• Might not fully understand large codebase context/dependencies.
+		○ Key: “Large codebase = Context gap.”
+50. Writing Documentation
+	• Suggests summaries/descriptions based on code.
+		○ Key: “Suggests summaries.”
+
+Exam Hacking Notes:
+	• “Up-to-date” = Copilot avoids deprecated code.
+	• “Context + Suggestion” = Core of Copilot’s workflow.
+	• “Enrich prompt” = Pre-processing step.
+	• “Quality + Public code” = Checks before showing suggestions.
+	• “Complexity + Data” = Copilot’s main limits.
+	• “Prefix + Suffix” = FIM technique.
+	• “Context-aware + Model training” = Prompt data use.
+	• “IDE info” = Context source.
+	• “Related files” = LLM context.
+	• “Your patterns” = Custom models.
+	• “Safeguard + Filter” = Public code handling.
+	• “Personalized code” = Chat history use.
+	• “Block long public matches” = Duplication filter.
+	• “Examples” = Prompt relevance.
+	• “No examples” = Zero-shot.
+	• “Review + Refactor” = Best practice.
+	• “Patterns/Best practices” = Design phase.
+	• “Not always best-practice” = Refactoring limit.
+	• “Stay in IDE” = Minimize context switch.
+	• “Context gap” = Large codebase limit.
+	• “Suggests summaries” = Documentation help.
+
+Memorize the keys and you’ll ace the exam!
+
+GitHub Copilot Exam Cheat Sheet (Q51–Q75)
+
+51. Boilerplate Code Reduction
+	• Copilot suggests reusable code snippets.
+		○ Key: “Suggests reusable snippets.”
+52. Productivity Scenarios (Choose 2)
+	• Create documentation for new code.
+	• Help new devs understand codebase.
+		○ Key: “Docs + Onboarding.”
+53. Fixing Security Issues
+	• Annotates suggestions with known vulnerability patterns.
+		○ Key: “Annotate with vulnerabilities.”
+54. Math Computation Caution
+	• Pattern-based, doesn’t verify computation accuracy.
+		○ Key: “Pattern, not accuracy.”
+55. Guide AI to Company Test Standards
+	• Use specific prompt examples in chat.
+		○ Key: “Prompt examples = Standards.”
+
+58. Slash Command for Unit Tests
+	• /generate-tests
+		○ Key: “Generate = Tests.”
+59. Validate Content Exclusion
+	• Copilot icon in status bar shows message.
+		○ Key: “Status bar = Exclusion info.”
+60. When Excluded Content May Be Used
+	• If referenced in non-excluded code (e.g., function calls).
+		○ Key: “Reference = May use.”
+61. IP Infringement Protection
+	• Block public code matches.
+		○ Key: “Block public = IP safe.”
+62. Limitation of Content Exclusions
+	• Workaround possible, only for Git repos.
+		○ Key: “Workaround, Git only.”
+63. Configurable Content Exclusions (Choose 3)
+	• Repos, Files, Lines in files.
+		○ Key: “Repos, Files, Lines.”
+64. Exclude Files in Copilot Individual
+	• Upgrade to Copilot Business.
+		○ Key: “Business = Exclude files.”
+65. Check When Exclusions Not Working (Choose 2)
+	• Server connection, Org has exclusions.
+		○ Key: “Server + Org config.”
+66. Toxicity Filter Flags (Choose 2)
+	• Sexually suggestive, Hate speech/discriminatory.
+		○ Key: “Sexual + Hate speech.”
+67. CLI Code Suggestions
+	• gh copilot suggest → Write command → Select best.
+		○ Key: “gh copilot suggest.”
+68. Function Correctness in Chat
+	• Suggests assertions based on context/semantics.
+		○ Key: “Assertions = Correctness.”
+69. Refactoring Prompts (Choose 2)
+	• Refactor for coding standards, Enhance maintainability.
+		○ Key: “Standards + Maintainability.”
+70. Code Optimization Suggestions
+	• Analyzes codebase, suggests efficient algorithms/data structures.
+		○ Key: “Analyze + Suggest efficient.”
+71. Quality Suggestion Practices (Choose 3)
+	• Examples of output, Define problem, Use .gitignore.
+		○ Key: “Examples, Define, .gitignore.”
+72. Best Feedback Way (Chat)
+	• Use emojis in Copilot Chat.
+		○ Key: “Emoji = Feedback.”
+73. Copilot Enterprise Pull Request Review (Choose 2)
+	• Summary & key changes, Validate accuracy of changes.
+		○ Key: “Summary + Validate.”
+74. Prompt/Suggestion Collection Plan
+	• Copilot Enterprise.
+		○ Key: “Enterprise = Collection.”
+75. Multiple Suggestions from Copilot
+	• Open completions panel in editor.
+		○ Key: “Completions panel.”
+
+Exam Hacking Notes:
+	• “Reusable snippets” = Boilerplate help.
+	• “Docs + Onboarding” = Productivity.
+	• “Annotate vulnerabilities” = Security.
+	• “Pattern, not accuracy” = Math caution.
+	• “Prompt examples” = Standards.
+	• “Generate-tests” = Unit test command.
+	• “Status bar” = Exclusion info.
+	• “Reference = May use” = Exclusion loophole.
+	• “Block public” = IP protection.
+	• “Workaround, Git only” = Exclusion limit.
+	• “Repos, Files, Lines” = Exclusion config.
+	• “Business = Exclude files” = Plan needed.
+	• “Server + Org config” = Exclusion check.
+	• “Sexual + Hate speech” = Toxicity filter.
+	• “gh copilot suggest” = CLI.
+	• “Assertions = Correctness” = Function check.
+	• “Standards + Maintainability” = Refactor prompts.
+	• “Analyze + Suggest efficient” = Optimization.
+	• “Examples, Define, .gitignore” = Quality.
+	• “Emoji = Feedback” = Chat feedback.
+	• “Summary + Validate” = PR review.
+	• “Enterprise = Collection/KB” = Plan/feature.
+	• “Completions panel” = Multiple suggestions.
+	• “Your patterns” = Custom models.
+
+GitHub Copilot Exam Cheat Sheet (Q76–Q100)
+
+76. Copilot Knowledge Base Feature
+	• Enterprise feature.
+		○ Key: “Enterprise = Knowledge Base.”
+77. Custom Models Benefit
+	• Uses practices and patterns in your repos.
+		○ Key: “Custom = Your patterns.”
+78. Code Review Still Needed for Copilot Tests
+	• Generated tests may not cover all scenarios.
+		○ Key: “Review = Cover all cases.”
+79. Refactoring Help
+	• Suggests improvements for better code quality.
+		○ Key: “Suggests refactoring.”
+80. Audit Log Events (Copilot Business)
+	• Use Audit log section in org’s GitHub settings.
+		○ Key: “Audit log = Org settings.”
+81. CLI Code Suggestions
+	• gh copilot suggest → Write command → Select best.
+		○ Key: “gh copilot suggest.”
+82. Multiple Suggestions from Copilot
+	• Open completions panel in editor.
+		○ Key: “Completions panel.”
+83. Content Exclusion Limitation
+	• Workaround possible, only for Git repos.
+		○ Key: “Workaround, Git only.”
+84. Knowledge Base Access Plan
+	• Copilot Enterprise.
+		○ Key: “Enterprise = KB access.”
+85. Role Prompting
+	• Describe your role in the prompt for better suggestions.
+		○ Key: “Describe role = Better results.”
+86. Chat History Role
+	• Provides context, improves relevance/accuracy.
+		○ Key: “History = Context.”
+87. Understanding Codebase
+	• Answers questions, generates explanations.
+		○ Key: “Q&A = Understand code.”
+88. Excluded Content Still Used (Choose 2)
+	• Repo-level overrides, Referenced in non-excluded code.
+		○ Key: “Override + Reference.”
+89. Feedback on Copilot Chat (Mobile)
+	• Settings menu in GitHub Mobile app.
+		○ Key: “Settings = Feedback.”
+90. Improving Prompts (Choose 2)
+	• Insight on where to get content, Specific success criteria.
+		○ Key: “Where + Success.”
+91. Math Computation Caution
+	• Pattern-based, doesn’t verify accuracy.
+		○ Key: “Pattern, not accuracy.”
+92. Few-shot Prompting
+	• Tell Copilot about the mechanism you want and how to process input.
+		○ Key: “Mechanism + How.”
+93. Copilot Business REST API Info
+	• Get summary of usage for org members.
+		○ Key: “Usage summary.”
+94. Minimize Context Switching
+	• Allows devs to stay in IDE.
+		○ Key: “Stay in IDE.”
+95. Chat History for Completion
+	• Personalized code snippets based on previous projects.
+		○ Key: “History = Personalized.”
+96. Fix Security Issues
+	• Annotates suggestions with known vulnerability patterns.
+		○ Key: “Annotate vulnerabilities.”
+97. Content Exclusion Not Working
+	• Check server connection.
+		○ Key: “Server connection.”
+98. Boilerplate Code Reduction
+	• Suggests reusable code snippets.
+		○ Key: “Reusable snippets.”
+99. Test Consistency
+	• Identifies patterns in tests, suggests similar for new.
+		○ Key: “Pattern = Consistency.”
+100. SDLC Design Phase Contribution
+	• Suggests design patterns/best practices based on context/codebase.
+		○ Key: “Design = Patterns + Context.”
+
+Exam Hacking Notes:
+	• “Enterprise = KB/feature” = Knowledge Base, advanced features.
+	• “Your patterns” = Custom models.
+	• “Review = Cover all cases” = Always review Copilot’s output.
+	• “Suggests refactoring” = Code quality.
+	• “Audit log = Org settings” = Where to find logs.
+	• “gh copilot suggest” = CLI.
+	• “Completions panel” = Multiple suggestions.
+	• “Workaround, Git only” = Exclusion limits.
+	• “Describe role” = Role prompting.
+	• “History = Context/Personalized” = Chat history use.
+	• “Q&A = Understand code” = Copilot Chat.
+	• “Override + Reference” = Exclusion loopholes.
+	• “Settings = Feedback” = Mobile feedback.
+	• “Where + Success” = Prompt improvement.
+	• “Pattern, not accuracy” = Math caution.
+	• “Mechanism + How” = Few-shot prompting.
+	• “Usage summary” = REST API.
+	• “Stay in IDE” = Minimize context switch.
+	• “Annotate vulnerabilities” = Security.
+	• “Server connection” = Exclusion troubleshooting.
+	• “Reusable snippets” = Boilerplate help.
+	• “Pattern = Consistency” = Test writing.
+	• “Design = Patterns + Context” = SDLC help.
+
+GitHub Copilot Exam Cheat Sheet (Q101–Q129)
+
+101. Pre-processing User Input in Copilot Chat
+	• Enriches input prompt with additional context before sending to the language model.
+		○ Key: “Pre-process = Add context.”
+102. Handling Public Code Matches
+	• Implements safeguards to avoid suggesting verbatim public code.
+		○ Key: “Safeguard = No verbatim public code.”
+103. Effects of Content Exclusions (Choose 2)
+	• Excluded content not available as context.
+	• Copilot suggestions not available in excluded files.
+		○ Key: “No context, no suggestions in excluded.”
+104. Principle: AI Should Be Understandable
+	• Transparency.
+		○ Key: “Transparency = Understandable AI.”
+105. Org-level Feature to Prevent Public Code Suggestions
+	• Public duplication detection filter.
+		○ Key: “Duplication filter = Block public code.”
+106. Copilot Chat Limitations (Choose 2)
+	• Limited training data, Can’t handle complex code structures.
+		○ Key: “Limited data, complex code = Limits.”
+107. Methods to Interact with Copilot (Choose 2)
+	• CLI, Chat in NeoVim.
+		○ Key: “CLI + NeoVim.”
+108. Copilot Chat Data Sources
+	• Combines training data, user code, external sources (e.g., Bing).
+		○ Key: “Training + User code + Bing.”
+109. Improve Context Used by Copilot (Choose 2)
+	• Open relevant tabs, Add code snippets to prompt.
+		○ Key: “Tabs + Snippets.”
+110. Unit Test Suggestion Limitation
+	• Suggests basic tests, needs dev input for coverage.
+		○ Key: “Basic tests only.”
+111. Best Plan for Contractors
+	• Copilot Individual.
+		○ Key: “Individual = Contractors.”
+112. Effect of Training on Common Patterns
+	• Suggests code matching common practices in training data.
+		○ Key: “Common patterns = Common code.”
+113. Modernizing Applications
+	• Suggests modern programming patterns.
+		○ Key: “Modern patterns.”
+114. Fairness in AI Operation
+	• Train data/algorithms to be bias-free.
+		○ Key: “Train for fairness.”
+115. Exclude Files in Copilot Business
+	• Use Copilot settings in UI to exclude files.
+		○ Key: “UI settings = Exclude files.”
+116. Gen AI Inaccurate Outputs
+	• Training data may have bias/inconsistencies.
+		○ Key: “Bias/inconsistency = Inaccuracy.”
+117. Content Exclusion Options (Choose 3)
+	• Files, Folders, Repositories.
+		○ Key: “Files, Folders, Repos.”
+118. /tests Slash Command
+	• Creates unit tests for selected code.
+		○ Key: “/tests = Unit tests.”
+119. Content Exclusion Update Time
+	• Up to 30 minutes.
+		○ Key: “30 min = Exclusion update.”
+120. Copilot Knowledge Base Fact
+	• Enterprise feature.
+		○ Key: “Enterprise = KB.”
+121. Intended Use of Copilot Chat
+	• Productivity tool, relies on human judgment.
+		○ Key: “Productivity, not replacement.”
+122. Proxy Service Hosting
+	• Microsoft Azure.
+		○ Key: “Azure = Proxy.”
+123. Zero-shot Prompting
+	• Only question, no examples.
+		○ Key: “Zero-shot = No examples.”
+124. /optimize Slash Command
+	• Enhances performance by analyzing runtime complexity.
+		○ Key: “Optimize = Performance.”
+125. Inline Refactoring Suggestions (Choose 2)
+	• Add comments, Highlight code and select “Refactor using Copilot.”
+		○ Key: “Comments + Highlight/Refactor.”
+126. AI Risk
+	• AI can make decisions hard to interpret.
+		○ Key: “Opaque decisions = Risk.”
+127. Copilot Business Audit Log Tracks
+	• Changes to content exclusion settings.
+		○ Key: “Audit log = Exclusion changes.”
+128. Public Code Match Detection
+	• Runs suggestions through filters to detect public code.
+		○ Key: “Filter = Detect public code.”
+129. Team Environment Benefit
+	• Encourages code consistency with similar suggestions.
+		○ Key: “Consistency = Team benefit.”
+
+Exam Hacking Notes:
+	• “Add context” = Pre-processing.
+	• “No verbatim public code” = Safeguard.
+	• “No context/suggestions in excluded” = Exclusion effect.
+	• “Transparency” = Understandable AI.
+	• “Duplication filter” = Block public code.
+	• “Limited data/complex code” = Copilot limits.
+	• “CLI + NeoVim” = Interaction.
+	• “Training + User code + Bing” = Data sources.
+	• “Tabs + Snippets” = Improve context.
+	• “Basic tests only” = Unit test limit.
+	• “Individual = Contractors” = Best plan.
+	• “Common code” = Common patterns.
+	• “Modern patterns” = Modernization.
+	• “Train for fairness” = Bias-free.
+	• “UI settings = Exclude files” = Exclusion.
+	• “Bias/inconsistency = Inaccuracy” = Gen AI.
+	• “Files, Folders, Repos” = Exclusion options.
+	• “/tests = Unit tests” = Slash command.
+	• “30 min = Exclusion update” = Timing.
+	• “Enterprise = KB” = Knowledge Base.
+	• “Productivity, not replacement” = Intended use.
+	• “Azure = Proxy” = Hosting.
+	• “Zero-shot = No examples” = Prompting.
+	• “Optimize = Performance” = Slash command.
+	• “Comments + Highlight/Refactor” = Inline refactor.
+	• “Opaque decisions = Risk” = AI risk.
+	• “Audit log = Exclusion changes” = Tracking.
+	• “Filter = Detect public code” = Detection.
+	• “Consistency = Team benefit” = Teamwork.
+
+Memorize these keys for quick recall and exam success!
