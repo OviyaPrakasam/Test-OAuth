@@ -1,0 +1,314 @@
+1. Copilot Chat & Unit Tests
+Key: “Copilot = Test code, params, asserts, edge cases.”
+
+2. Test Explorer in VS Code
+Key: “Run, debug, manage tests.”
+
+3. Arrange, Act, Assert
+Key: “AAA = Setup, Do, Check.”
+
+4. Copilot Unit Test Suggestions
+Key: “Context = Smart test suggestions.”
+
+5. Copilot Unit Test Benefit
+Key: “Saves time, covers more cases.”
+
+6. Assertions for Input Validity
+Key: “Assertions = Block bad data.”
+
+7. Code Quality Factors
+Key: “Quality = Readability, reliability, security, etc.”
+
+8. Code Reliability
+Key: “Reliability = Works as expected.”
+
+9. Improve Reliability
+Key: “Find bugs early.”
+
+10. High Quality Bar Effect
+Key: “Copilot follows your code style.”
+
+11. Secure Exception Handling
+Key: “Catch specific, hide sensitive, don’t swallow.”
+
+12. Refactoring Purpose
+Key: “Refactor = Better inside, same outside.”
+
+13. Project Documentation
+Key: “Docs = Understand project.”
+
+14. Inline Code Documentation
+Key: “Inline docs = Readable, maintainable.”
+
+15. Copilot Code Conversion
+Key: “Convert code, function, or snippet.”
+
+16. Copilot Free?
+Key: “Not free (except students).”
+
+17. Supported IDEs
+Key: “VS Code, Visual Studio, Neovim, JetBrains.”
+
+18. Business vs Enterprise
+Key: “Enterprise = Org codebase training.”
+
+19. Enable Copilot for Business
+Key: “Org settings in profile.”
+
+20. Copilot Chat Bug Fixes
+Key: “Suggests code fixes by context.”
+
+21. Chat Participants/Commands/Vars
+Key: “Context + intent = Better answers.”
+
+22. Copilot Chat Explains Code
+Key: “Natural language code explanations.”
+
+23. Copilot Chat & Errors
+Key: “Explains & suggests fixes.”
+
+24. Code Line Completions
+Key: “From comment or code line.”
+
+25. Ghost Text
+Key: “Inline suggestion as you type.”
+
+26. Slash Commands
+Key: “Quick dev shortcuts.”
+
+27. Agents like @terminal/@workspace
+Key: “Ask in context = Precise answers.”
+
+28. Not Supported in Individuals
+Key: “No VPN proxy/self-signed certs.”
+
+29. Accept Copilot Suggestion
+Key: “Press Tab.”
+
+30. What is Copilot?
+Key: “AI pair programmer.”
+
+31. How Copilot Suggests
+Key: “Based on code context.”
+
+32. Org Codebase Use
+Key: “Tailored help, org standards.”
+
+33. How Copilot Works
+Key: “Prompts + natural language.”
+
+34. Copilot Learning
+Key: “Zero/one/few-shot learning.”
+
+35. NOT a Copilot Step
+Key: “No stats/pattern recognition.”
+
+36. Fill-in-the-Middle (FIM)
+Key: “Wider context = Better suggestions.”
+
+37. Outbound Flow
+Key: “User reviews suggestion.”
+
+38. Multiple Suggestions
+Key: “Review with arrows.”
+
+39. Review Copilot Output
+Key: “Check for accuracy.”
+
+40. Prompt Definition
+Key: “Prompt = Instructions for Copilot.”
+
+41. LLM Role
+Key: “LLM = Context-aware code.”
+
+42. Prompt Context & Intent
+Key: “Scope + goal = Good prompt.”
+
+43. Copilot Chat Performance
+Key: “Limit to code Qs/tasks.”
+
+44. Provide Context for Suggestions
+Key: “Good names, comments, open files.”
+
+45. Optimize Chat Experience
+Key: “Use chat tools, be specific.”
+
+46. NOT Effective Prompt Principle
+Key: “No verbosity.”
+
+47. Content Filtering Purpose
+Key: “Block malicious code.”
+
+48. Toxicity Filter Purpose
+Key: “Block harmful/offensive code.”
+
+49. Toxicity Filter Purpose
+Key: “Block harmful/offensive code.”
+
+50. Toxicity Filter Purpose
+Key: “Block harmful/offensive code.”
+
+Super Short Exam Hacks:
+
+“Copilot = context, patterns, suggestions.”
+“Test tools = run, debug, manage.”
+“AAA = Arrange, Act, Assert.”
+“Refactor = inside only.”
+“Docs = clarity.”
+“Ghost text = inline.”
+“Slash = shortcut.”
+“Tab = accept.”
+“LLM = smart code.”
+“Toxicity/content filter = block bad code.”
+Memorize these keys for fast recall and exam success!
+
+
+1. What is the role of GitHub Copilot Chat in generating unit test cases?
+Answer: It helps generate code snippets for test cases based on the code specified by the user, suggests possible input parameters, expected output values, and assertions, and can help identify edge cases and boundary conditions.
+
+2. What is the purpose of the Test Explorer in Visual Studio Code?
+Answer: To run and debug unit tests, view the results of test runs, and manage test cases in the workspace.
+
+3. What is the significance of the Arrange, Act, and Assert sections in unit tests?
+Answer: They are used to structure unit tests into setup (Arrange), execution (Act), and verification (Assert) phases.
+
+4. What does GitHub Copilot provide when creating unit tests for specific conditions?
+Answer: It suggests completions and generates tests based on the code context.
+
+5. What is the benefit of using GitHub Copilot for generating unit tests?
+Answer: It can suggest a range of unit tests based on the code context, saving development time.
+
+6. What is the purpose of generating assertions to ensure that function input parameters are valid?
+Answer: To prevent invalid data from being processed by the function.
+
+7. What factors can be considered when working on code quality improvements?
+Answer: Readability, complexity, modularity, reusability, testability, extensibility, reliability, performance, security, scalability, usability, and portability.
+
+8. What does code reliability refer to in software development?
+Answer: The likelihood that software will function correctly under specific conditions and for a certain period of time.
+
+9. What is one way to improve code reliability?
+Answer: By identifying potential issues in the code to prevent bugs and errors from occurring.
+
+10. What is the effect of maintaining a high quality bar in your code when using GitHub Copilot?
+Answer: Copilot latches on to your code to generate suggestions that follow the existing pattern.
+
+11. What are some ways to improve exception handling in code to make it more secure?
+Answer: Catch the most specific exceptions possible, avoid revealing sensitive information in exceptions, and avoid swallowing exceptions.
+
+12. What is the purpose of code refactoring?
+Answer: To improve the internal structure of the code without altering its external behavior or functionality.
+
+13. What is the primary purpose of project documentation in software development?
+Answer: To provide essential information for understanding the project's scope and purpose.
+
+14. What is the purpose of generating inline code documentation in software development?
+Answer: To create a more readable and maintainable codebase that's easier for other developers to understand and work with.
+
+15. What types of code conversions can be completed using GitHub Copilot?
+Answer: Convert an entire code file, a function, or a code snippet to another programming language.
+
+16. Is GitHub Copilot free?
+Answer: No, it's a service you can sign up for that's free for students to use but currently costs 10 dollars per month.
+
+17. What are the supported integrated development environment extensions for GitHub Copilot?
+Answer: Visual Studio Code, Visual Studio, Neovim, and JetBrains.
+
+18. What is the difference between GitHub Copilot Business and GitHub Copilot Enterprise?
+Answer: GitHub Copilot Enterprise has an extra layer of personalization, with organization utilizing their own codebase to train GitHub Copilot.
+
+19. After you enforced your GitHub Copilot for Business policy, where do you first navigate in order to enable Copilot for Business for all current and future users?
+Answer: Your organizations in your profile dropdown menu
+
+20. How does GitHub Copilot Chat propose fixes for bugs in your code?
+Answer: By suggesting code snippets and solutions based on the context of the error or issue.
+
+21. What is the purpose of using chat participants, slash commands, and chat variables in GitHub Copilot Chat?
+Answer: They help GitHub Copilot Chat understand the context and intent of the question.
+
+22. How can GitHub Copilot Chat help generate explanations for unfamiliar code?
+Answer: By generating natural language descriptions of the code's functionality and purpose.
+
+23. How can GitHub Copilot Chat assist when encountering an error in the code?
+Answer: It can explain the cause of the error and suggest ways to fix it.
+
+24. What are the two ways to generate code line completions using GitHub Copilot?
+Answer: Generate completions from a comment and from a code line.
+
+25. What is ghost text in GitHub Copilot?
+Answer: Ghost text in GitHub Copilot are suggestions that appear in your text editor as you type.
+
+26. What are slash commands used for in GitHub Copilot?
+Answer: Slash commands are shortcuts to quickly solve common development tasks within the chat or inline pane.
+
+27. What are the benefits of using agents like '@terminal' or '@workspace' when interacting with GitHub Copilot?
+Answer: Agents in Visual Studio Code help you ask questions within a specific context, allowing for more precise and relevant answers from GitHub Copilot.
+
+28. What functionality isn't supported in GitHub Copilot for Individuals?
+Answer: VPN Proxy support via self-signed certificates
+
+29. How can you accept GitHub Copilot's suggestions?
+Answer: Press the Tab key.
+
+30. What is GitHub Copilot?
+Answer: GitHub Copilot is an AI pair programmer that you can use to get code suggestions.
+
+31. How does GitHub Copilot determine the code completion suggestions it provides?
+Answer: Based on the context of code in the editor.
+
+32. How does Copilot use an organization's codebase and internal knowledge to enhance productivity and collaboration?
+Answer: By tailoring coding assistance, answering questions, and suggesting code aligned with the organization's standards and best practices
+
+33. How does GitHub Copilot work?
+Answer: GitHub Copilot uses prompts and natural language text that you type to provide coding suggestions.
+
+34. How does GitHub Copilot learn from your prompts?
+Answer: It utilizes various approaches including zero-shot, one-shot, and few-shot learning.
+
+35. Which of the following is NOT a step in the process of GitHub Copilot processing a user's prompt into a code suggestion?
+Answer: Statistical analysis and pattern recognition
+
+36. How does the Fill-in-the-Middle (FIM) technique enhance GitHub Copilot's code suggestions?
+Answer: By enabling Copilot to consider a wider context of code surrounding the cursor position
+
+37. In the outbound flow of GitHub Copilot, which of the following actions might occur after the code suggestion is generated?
+Answer: The suggestion is presented to the user for review and acceptance
+
+38. What happens when GitHub Copilot generates more than one code completion suggestion?
+Answer: It enables developers to review each suggestion by selecting the left or right arrows.
+
+39. What is the purpose of reviewing and correcting the output generated by GitHub Copilot Chat?
+Answer: To ensure the accuracy and completeness of the generated explanations and documentation.
+
+40. Identify which statement is valid and select the correct answer:
+Answer: A prompt, which is our input, is a collection of instructions or guidelines that tell our copilot what to generate.
+
+41. What is the role of Large Language Models (LLMs) in GitHub Copilot?
+Answer: To generate context-aware code suggestions and respond to prompts
+
+42. What is the importance of context and intent when developing prompts for GitHub Copilot Chat?
+Answer: They specify the scope that GitHub Copilot should examine and the goal to be achieved.
+
+43. What is a recommended practice to improve the performance of GitHub Copilot Chat?
+Answer: Limiting the prompt to coding questions or tasks to enhance the model's output quality.
+
+44. What is the best way to provide context to GitHub Copilot for better code suggestions?
+Answer: By providing meaningful function names, specific function comments, and having related files open in the editor.
+
+45. How can a developer optimize their experience when interacting with GitHub Copilot via chat?
+Answer: By using chat participants, slash commands, chat variables, and being specific in your prompts.
+
+46. Which of the following is NOT a principle of effective prompt engineering for GitHub Copilot?
+Answer: Verbosity - Provide extensive and detailed descriptions.
+
+47. What is the primary purpose of content filtering in GitHub Copilot?
+Answer: To prevent the generation of malicious or harmful code
+
+48. What is the primary purpose of the toxicity filter in GitHub Copilot?
+Answer: To eliminate harmful or offensive content in code suggestions
+
+49. What is the primary purpose of the toxicity filter in GitHub Copilot?
+Answer: To eliminate harmful or offensive content in code suggestions
+
+50. What is the primary purpose of the toxicity filter in GitHub Copilot?
+Answer: To eliminate harmful or offensive content in code suggestions
